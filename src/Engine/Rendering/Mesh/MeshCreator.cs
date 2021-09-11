@@ -87,22 +87,6 @@ namespace ZargoEngine.Rendering
              1.0f, -1.0f, -1.0f,
             -1.0f, -1.0f,  1.0f,
              1.0f, -1.0f,  1.0f
-        };
-
-        private readonly struct TriangleIndices
-        {
-            public readonly int v1;
-            public readonly int v2;
-            public readonly int v3;
-
-            public TriangleIndices(in int v1,in int v2,in int v3)
-            {
-                this.v1 = v1;
-                this.v2 = v2;
-                this.v3 = v3;
-            }
-        }
-
-       
+        };       
     }
 }
