@@ -1,0 +1,120 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Users\\Administrator\\source\\repos\\ZargoEngine2\\ZargoEngine2.csproj": {}
+  },
+  "projects": {
+    "C:\\Users\\Administrator\\source\\repos\\ZargoEngine2\\ZargoEngine2.csproj": {
+      "version": "1.0.1",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\Administrator\\source\\repos\\ZargoEngine2\\ZargoEngine2.csproj",
+        "projectName": "ZargoEngine",
+        "projectPath": "C:\\Users\\Administrator\\source\\repos\\ZargoEngine2\\ZargoEngine2.csproj",
+        "packagesPath": "C:\\Users\\Administrator\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Administrator\\source\\repos\\ZargoEngine2\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\Administrator\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net5.0-windows7.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net5.0-windows7.0": {
+            "targetAlias": "net5.0-windows7.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net5.0-windows7.0": {
+          "targetAlias": "net5.0-windows7.0",
+          "dependencies": {
+            "AssimpNet": {
+              "target": "Package",
+              "version": "[4.1.0, )"
+            },
+            "BepuPhysics": {
+              "target": "Package",
+              "version": "[2.3.0, )"
+            },
+            "BepuUtilities": {
+              "target": "Package",
+              "version": "[2.3.0, )"
+            },
+            "Collections.Pooled": {
+              "target": "Package",
+              "version": "[1.0.82, )"
+            },
+            "Coroutine": {
+              "target": "Package",
+              "version": "[2.1.1, )"
+            },
+            "FreeTypeSharp": {
+              "target": "Package",
+              "version": "[1.1.3, )"
+            },
+            "Microsoft.VisualStudio.VsixColorCompiler": {
+              "target": "Package",
+              "version": "[16.0.0, )"
+            },
+            "NAudio": {
+              "target": "Package",
+              "version": "[2.0.0, )"
+            },
+            "Newtonsoft.Json": {
+              "target": "Package",
+              "version": "[13.0.1, )"
+            },
+            "OpenTK": {
+              "target": "Package",
+              "version": "[4.6.4, )"
+            },
+            "PlayCity.BulletSharp": {
+              "target": "Package",
+              "version": "[1.1.0, )"
+            },
+            "SixLabors.ImageSharp": {
+              "target": "Package",
+              "version": "[1.0.3, )"
+            },
+            "Ultraviolet.FreeType2": {
+              "target": "Package",
+              "version": "[2021.5.0.4569, )"
+            },
+            "Ultraviolet.FreeType2.Native": {
+              "target": "Package",
+              "version": "[2021.5.0.4569, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.301\\RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

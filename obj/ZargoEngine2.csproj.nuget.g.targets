@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+  </PropertyGroup>
+  <ImportGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
+    <Import Project="$(NuGetPackageRoot)ultraviolet.freetype2.native\2021.5.0.4569\build\netcoreapp3.1\Ultraviolet.FreeType2.Native.targets" Condition="Exists('$(NuGetPackageRoot)ultraviolet.freetype2.native\2021.5.0.4569\build\netcoreapp3.1\Ultraviolet.FreeType2.Native.targets')" />
+    <Import Project="$(NuGetPackageRoot)playcity.bulletsharp\1.1.0\build\netstandard2.0\PlayCity.BulletSharp.targets" Condition="Exists('$(NuGetPackageRoot)playcity.bulletsharp\1.1.0\build\netstandard2.0\PlayCity.BulletSharp.targets')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.visualstudio.vsixcolorcompiler\16.0.0\build\Microsoft.VisualStudio.VsixColorCompiler.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.visualstudio.vsixcolorcompiler\16.0.0\build\Microsoft.VisualStudio.VsixColorCompiler.targets')" />
+    <Import Project="$(NuGetPackageRoot)assimpnet\4.1.0\build\AssimpNet.targets" Condition="Exists('$(NuGetPackageRoot)assimpnet\4.1.0\build\AssimpNet.targets')" />
+  </ImportGroup>
+</Project>

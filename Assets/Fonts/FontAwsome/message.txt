@@ -1,0 +1,218 @@
+
+using ImGuiNET;
+using OpenTK.Graphics.OpenGL4;
+using OpenTK.Mathematics;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Runtime.InteropServices;
+using ZargoEngine.AssetManagement;
+using ZargoEngine.Editor;
+using ZargoEngine.Rendering;
+using FreeTypeSharp.Native;
+
+namespace ZargoEngine
+{
+    public class FontRenderer : Component
+    {
+        readonly int[] indices = new int[6]
+        {
+            0, 2, 1,
+            2, 3, 1
+        };
+
+        readonly Vector2[] texPosition = new Vector2[4]
+        {
+              new Vector2(0, 0),
+              new Vector2(1, 0),
+              new Vector2(0, 1),
+              new Vector2(1, 1)
+        };
+
+        readonly Vector2[] texCoords = new Vector2[4]
+        {
+              new Vector2(0, 0),
+              new Vector2(1, 0),
+              new Vector2(0, 1),
+              new Vector2(1, 1)
+        };
+
+        private static Shader shader;
+        
+        private readonly Dictionary<char,Character> characters = new Dictionary<char,Character>();
+
+        public string text = "sa gardes naber";
+        public Vector2 Position = new Vector2(0,0);
+
+        public System.Numerics.Vector3 color = new System.Numerics.Vector3(1,1,1);
+        public float Scale = 1;
+
+        private readonly int vaoID, vboID, eboID;
+
+        public unsafe FontRenderer() : this(AssetManager.GetFileLocation("Fonts/OpenSans-Regular.ttf")) { }
+
+        public unsafe FontRenderer(string path)
+        {
+            name = "Font Renderer";
+
+            if (!File.Exists(path))
+            {
+                Debug.LogError("lao font adres six");
+                Console.ReadLine();
+                return;
+            }
+
+            FT_LibraryRec fT_LibraryRec = new FT_LibraryRec();
+
+            IntPtr libraryPtr = (IntPtr)(&fT_LibraryRec);
+
+            FT.FT_Init_FreeType(out libraryPtr);
+
+            FT.FT_New_Face(libraryPtr, path, 0,out IntPtr facePtr);
+
+            FT_FaceRec face = Marshal.PtrToStructure<FT_FaceRec>(facePtr);
+
+            if (facePtr == IntPtr.Zero)
+            {
+                Debug.LogError("font file initialization failed");
+                return;
+            }
+            
+            FT.FT_Set_Pixel_Sizes(facePtr,48, 48);
+
+            GL.PixelStore(PixelStoreParameter.UnpackAlignment, 1);
+
+            if (shader == null)
+            {
+                shader = new Shader(AssetManager.GetFileLocation("Shaders/FontVert.glsl"), AssetManager.GetFileLocation("Shaders/FontFrag.glsl"));
+            }
+
+            for (int i = 0; i < 128; i++)
+            {
+                FT.FT_Load_Char(facePtr,Convert.ToChar(i), FT.FT_LOAD_RENDER);
+                int textureID = GL.GenTexture();
+                
+                GL.BindTexture(TextureTarget.Texture2D, textureID);
+                GL.TexImage2D(TextureTarget.Texture2D,0,PixelInternalFormat.R8,
+                             (int)face.glyph->bitmap.width,
+                             (int)face.glyph->bitmap.rows,
+                             0, PixelFormat.Red, PixelType.UnsignedByte, face.glyph->bitmap.buffer);
+
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureParameterName.ClampToEdge);
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureParameterName.ClampToEdge);
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMinFilter.Linear);
+
+                Character character = new Character
+                (
+                    textureID, new Vector2i((int)face.glyph->bitmap.width, (int)face.glyph->bitmap.rows),
+                    new Vector2i(face.glyph->bitmap_left, face.glyph->bitmap_top), (uint)face.glyph->advance.x
+                );
+                characters.Add(Convert.ToChar(i),character);
+            }
+
+            FT.FT_Done_Face(facePtr);
+            FT.FT_Done_FreeType(libraryPtr);
+
+            LoadBuffers(ref vaoID, ref vboID, ref eboID);
+        }
+
+        private void LoadBuffers(ref int vaoID, ref int vboID, ref int eboID)
+        {
+            vaoID = GL.GenVertexArray();
+            GL.BindVertexArray(vaoID);
+
+            Debug.Log(GL.GetError());
+
+            vboID = GL.GenBuffer();
+            GL.BindBuffer(BufferTarget.ArrayBuffer, vboID);
+            GL.BufferData(BufferTarget.ArrayBuffer, indices.Length * Marshal.SizeOf<Vector2>(), indices, BufferUsageHint.DynamicDraw);
+            GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, Marshal.SizeOf<Vector2>(), 0);
+
+            Debug.Log(GL.GetError());
+
+            eboID = GL.GenBuffer();
+
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, eboID);
+            GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(int), indices, BufferUsageHint.StaticDraw);
+
+            var uvBuffer = GL.GenBuffer();
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, uvBuffer);
+            GL.BufferData(BufferTarget.ArrayBuffer, texCoords.Length * Marshal.SizeOf<Vector2>(), texCoords, BufferUsageHint.StaticDraw);
+            GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, 0, IntPtr.Zero);
+
+            Debug.Log(GL.GetError());
+        }
+
+        public override void DrawWindow()
+        {
+            GUI.Header(ref name);
+            GUI.TextField(ref text, nameof(text), OnValidate);
+            GUI.Vector2Field(ref Position, nameof(Position), OnValidate,1);
+            GUI.Color3Field(ref color, nameof(color), OnValidate);
+            GUI.FloatField(ref Scale, nameof(Scale), OnValidate);
+
+            ImGui.Separator();
+        }
+
+        // render line of text
+        // -------------------
+        public void RenderHUD()
+        {
+            GL.Disable(EnableCap.DepthTest);
+            GL.Disable(EnableCap.CullFace);
+            GL.DepthMask(false);
+            GL.Clear(ClearBufferMask.DepthBufferBit);
+
+            shader.Use();
+            shader.SetVector3("cameraPos", SceneManager.currentScene.renderHandeller.camera.Position);
+            Shader.SetMatrix4(shader.GetUniformLocation(Shader.projection),
+                                                        Matrix4.CreateOrthographic(GameViewWindow.Width,GameViewWindow.Height,-1,1), false);
+            shader.SetInt("texture0", 0);
+            shader.SetVector2("position", Position);
+            shader.SetFloat("scale", Scale);
+            
+            GL.BindTexture(TextureTarget.Texture2D, characters['a'].textureID);
+
+            GL.BindVertexArray(vaoID);
+
+            GL.EnableVertexAttribArray(0);
+            GL.EnableVertexAttribArray(1);
+
+            GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
+
+            GL.EnableVertexAttribArray(0);
+            GL.EnableVertexAttribArray(1);
+
+            GL.BindVertexArray(0);
+
+            GL.Disable(EnableCap.CullFace);
+            GL.DepthMask(true);
+            GL.Enable(EnableCap.DepthTest);
+        }
+
+        public override void Dispose()
+        {
+            GL.DeleteVertexArray(vaoID);
+            GL.DeleteBuffer(vboID);
+            GC.SuppressFinalize(this);
+        }
+    }
+
+    public unsafe readonly struct Character
+    {
+        public readonly int textureID;
+        public readonly Vector2i size;
+        public readonly Vector2i bearing;
+        public readonly uint advance;
+
+        public Character(int textureID, Vector2i size, Vector2i bearing, uint advance)
+        {
+            this.textureID = textureID;
+            this.size = size;
+            this.bearing = bearing;
+            this.advance = advance;
+        }
+    }
+}
