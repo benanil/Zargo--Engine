@@ -1,21 +1,25 @@
 ﻿// IndirectLight
 #version 400 core
 
-layout(location = 0) out vec4 outputColor;
+// gbuffer stuff and returning color
+layout (location = 0) out vec3 gPosition;
+layout (location = 1) out vec3 gNormal;
+layout (location = 2) out vec4 gAlbedoSpec;
 
 in vec3 pworldSpacePosition;
 in vec3 pLocalPosition;
 in vec3 Normal;
-in vec2 texCoord;
+in vec2 texCoords;
 in vec3 FragPos;
+in vec3 ScreenNormal; // for ssao
 
 //these are same for all shaders
 uniform float ambientStrength; // dontUse
-uniform vec3 ambientColor ;    // dontUse
-uniform float sunIntensity;    // dontUse
-uniform float sunAngle    ;    // dontUse
-uniform vec3 sunColor     ;    // dontUse
-uniform vec3 viewpos;          // dontUse
+uniform vec3 ambientColor    ; // dontUse
+uniform float sunIntensity   ; // dontUse
+uniform float sunAngle       ; // dontUse
+uniform vec3 sunColor        ; // dontUse
+uniform vec3 viewpos         ; // dontUse
 
 uniform sampler2D albedoTex;
 uniform sampler2D AOTex;
@@ -117,8 +121,8 @@ void main()
 {
      vec3 SunDirection = vec3(0, sin(sunAngle), cos(sunAngle));
      
-     vec3 tex = texture(albedoTex, texCoord).xyz;
-     float ao = -max(.2 , min(1, texture(AOTex, texCoord).r * AOIntensity));
+     vec3 tex = texture(albedoTex, texCoords).xyz;
+     float ao = -max(.2 , min(1, texture(AOTex, texCoords).r * AOIntensity));
      
      // directional light calculation
      float NdotL = clamp(dot(Normal, SunDirection * sunIntensity),0.2,1.0);
@@ -133,7 +137,9 @@ void main()
      
      vec3 result = (ambientColor * ambientStrength + diffuseTerm + CalculateLights()) * tex;
      
-     outputColor = vec4(result * ao, 1.0) * color;
+     gPosition = FragPos;
+     gNormal = ScreenNormal;
+     gAlbedoSpec = vec4(result * ao, 1.0) * color;
 }
 
 

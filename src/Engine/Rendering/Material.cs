@@ -77,15 +77,19 @@ namespace ZargoEngine.Rendering {
             internal int textureLocation;
             /// <summary> texture pointer </summary>
             internal int textureID;
+            internal string path;
             internal readonly string name;
-            internal readonly string path;
-
-            public TextureHolder(Shader shader, Texture texture, in string name)
+            
+            public TextureHolder(Shader shader, string path, in string name)
             {
                 textureLocation = shader.GetUniformLocation(name);
-                textureID = texture.texID;
+                textureID = 0;
+                if (File.Exists(Directory.GetCurrentDirectory() + path)) {
+                    Texture texture = new Texture(Directory.GetCurrentDirectory() + path);
+                    textureID = texture.texID;
+                }
                 this.name = name;
-                this.path = texture.path;
+                this.path = path;
             }
         }
 
@@ -136,7 +140,7 @@ namespace ZargoEngine.Rendering {
             {
                 shader.SetInt("shadowMap", textures.Length);
                 GL.ActiveTexture(TextureUnit.Texture0 + textures.Length);
-                GL.BindTexture(TextureTarget.Texture2D, Renderer3D.GetShadowTexture());
+                GL.BindTexture(TextureTarget.Texture2D, Shadow.GetShadowTexture());
             }
 
             RenderMeshes();
@@ -148,6 +152,7 @@ namespace ZargoEngine.Rendering {
         // for depth texture and fature usages
         internal void RenderMeshes() => RenderMeshes(shader.ModelMatrixLoc);
 
+        /// <summary> vao binding and drawing meshes of the material </summary>
         internal void RenderMeshes(in int modelLoc)
         {
             // drawing meshes bind only one mesh once and change model matrices
@@ -179,7 +184,8 @@ namespace ZargoEngine.Rendering {
                 bool sameLine = true;
                 for (; i < textures.Length; i++)
                 {
-                    GUI.TextureField(textures[i].name, ref textures[i].textureID);
+
+                    GUI.TextureField(textures[i].name, ref textures[i].textureID, ref textures[i].path);
                     if (sameLine && i != textures.Length-1) ImGui.SameLine(); // second condition is for not writing last texture sameline
                     sameLine = !sameLine;
                 }
@@ -343,12 +349,17 @@ namespace ZargoEngine.Rendering {
                 if (splits[0] == "uniform")
                 {
                     // checking dont use attribute this allows us not displaying shadow texture in inspector etc
-                    if (!(splits[3] != null && splits[3] == Attributes.DontUse))
+                    bool use = true;
+                    if (splits[3] != null)
+                        if (splits[3] == Attributes.DontUse)
+                            use = false;
+                    
+                    if (use)
                     {
                         if (splits[1] == "sampler2D")
                         {   // add texture slot, check is texture have black attribute if so, use black texture
                             Texture texture = !string.IsNullOrEmpty(splits[3]) && splits[3] == Attributes.Black ? AssetManager.DarkTexture : AssetManager.DefaultTexture;
-                            textureList.Add(new TextureHolder(shader, texture, splits[2]));
+                            textureList.Add(new TextureHolder(shader, texture.path, splits[2]));
                         }
                         else if (splits[1].Contains(uniforms) && splits.Length > 1 &&
                                !string.IsNullOrWhiteSpace(splits[2]) && !splits[2].Contains(defaultProperties))
@@ -375,7 +386,7 @@ namespace ZargoEngine.Rendering {
             vector4s = new PropertyHolder<Vector4>[vec4Count];  color3s = new PropertyHolder<SysVec3>[color3Count];
             color4s  = new PropertyHolder<SysVec4>[color4Count];  mat4s = new PropertyHolder<Matrix4>[mat4Count];
 
-            reader = File.OpenText(shader.fragmentPath);
+            reader = File.OpenText(AssetManager.GetFileLocation(shader.fragmentPath));
             line = reader.ReadLine();
 
             for (; line != null; line = reader.ReadLine())
@@ -391,8 +402,7 @@ namespace ZargoEngine.Rendering {
                 }
 
                 if (splits[0] == Attributes.UniformEnd) break;
-
-                if (splits.Length < 3) continue;
+                if (splits.Length >= 4 && splits[3] == Attributes.DontUse)  continue;
 
                 if (splits[0] == "uniform" && splits[1].Contains(uniforms) && splits.Length > 1 &&
                    !string.IsNullOrWhiteSpace(splits[2]))
@@ -466,11 +476,11 @@ namespace ZargoEngine.Rendering {
                             vector3s[vec3Index] = new PropertyHolder<Vector3>(splits[2], location, condition3 ? new Vector3(float.Parse(numbers[1]), float.Parse(numbers[2]), float.Parse(numbers[3])) : Vector3.One);
                             vec3Index++;
                         }
-                        else if (splits[1] == uniforms[4])
+                        else if (splits[1] == uniforms[UniformType._vec4])
                         { // vec4
                             vector4s[vec4Index] = new PropertyHolder<Vector4>(splits[2], location, condition3 & !string.IsNullOrEmpty(numbers[4]) ? new Vector4(float.Parse(numbers[1]), float.Parse(numbers[2]), float.Parse(numbers[3]), float.Parse(numbers[4])) : Vector4.One); vec4Index++;
                         }
-                        else if (splits[1] == uniforms[5])
+                        else if (splits[1] == uniforms[UniformType._mat4])
                         { // matrix4
                             mat4s[mat4Index] = new PropertyHolder<Matrix4>(splits[2], location, Matrix4.Identity); mat4Index++;
                         }
@@ -561,7 +571,7 @@ namespace ZargoEngine.Rendering {
                 else if (type == uniforms[UniformType._vec4  ]) vector4s.Add(new PropertyHolder<Vector4>(name, location, new Vector4(float.Parse(numbers[0]), float.Parse(numbers[1]), float.Parse(numbers[2]), float.Parse(numbers[3]))));
                 else if (type == uniforms[UniformType._color3]) color3s.Add(new PropertyHolder<SysVec3>(name, location, new SysVec3(float.Parse(numbers[0]), float.Parse(numbers[1]), float.Parse(numbers[2]))));
                 else if (type == uniforms[UniformType._color4]) color4s.Add(new PropertyHolder<SysVec4>(name, location, new SysVec4(float.Parse(numbers[0]), float.Parse(numbers[1]), float.Parse(numbers[2]), float.Parse(numbers[3]))));
-                else if (type == "texture") textures.Add(new TextureHolder(shader, AssetManager.GetTexture(line[(name.Length + type.Length + 2)..]), name)); // add 2 because of spaces between type and name to path
+                else if (type == "texture") textures.Add(new TextureHolder(shader, line[(name.Length + type.Length + 2)..], name)); // add 2 because of spaces between type and name to path
                 else if (type == "enum")
                 {
                     name = (words = words.NextMatch()).Groups[0].Value;
@@ -593,6 +603,7 @@ namespace ZargoEngine.Rendering {
             integers = other.integers; color4s  = other.color4s;
             vector2s = other.vector2s; mat4s    = other.mat4s;
             vector3s = other.vector3s;
+            vertexPath = other.vertexPath; fragmentPath = other.fragmentPath;
         }
         #endregion // save load
 

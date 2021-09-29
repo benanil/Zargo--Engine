@@ -14,7 +14,7 @@ namespace ZargoEngine.Rendering
         public int width, height;
 
         FramebufferAttachment[] attachments;
-        PixelInternalFormat pixelInternalFormat = PixelInternalFormat.Rgba8;
+        PixelInternalFormat pixelInternalFormat = PixelInternalFormat.Rgba;
 
         public FrameBuffer(in int width, in int height)
         {

@@ -3,5 +3,5 @@ Basic
 ..\..\..\Assets\Shaders\Basic.frag
 float AOIntensity 2
 color4 color <1, 1, 1, 1>
-texture albedoTex ..\..\..\Assets\Images\default texture.png
-texture AOTex ..\..\..\Assets\Images\default texture.png
+texture albedoTex albedoTex
+texture AOTex AOTex

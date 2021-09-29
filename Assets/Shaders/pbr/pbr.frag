@@ -243,5 +243,3 @@ void main()
 
     outputColor = vec4((pbr + ambient) * ao, 1);
 }
-
-

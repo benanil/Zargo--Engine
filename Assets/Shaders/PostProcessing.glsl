@@ -8,6 +8,7 @@ layout(location = 2) uniform float saturation;
 layout(location = 3) uniform int mode;
 
 uniform sampler2D texture0;
+uniform sampler2D texture1; // ssao only has .r
 
 vec3 aces(in vec3 x) {
   const float a = 2.51; const float b = 0.03;
@@ -143,7 +144,8 @@ void Saturation(inout vec3 In)
 void main()
 {
 	vec3 color = texture(texture0, texCoords).rgb;
-    
+    // color *= texture(texture1, texCoords).r; //ssao integration
+
     // tone mapping
     vec3 mapped;
     switch(mode)

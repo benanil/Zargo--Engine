@@ -21,7 +21,7 @@ namespace ZargoEngine.Rendering
         public Texture(string path, PixelFormat pixelFormat = PixelFormat.Rgba, bool createMipMap = true)
         {
             var pixels = ImageLoader.Load(path, out width, out height,true,true);
-            this.path = path;
+            this.path = AssetManager.GetRelativePath(path);
 
             texID = GL.GenTexture();
 

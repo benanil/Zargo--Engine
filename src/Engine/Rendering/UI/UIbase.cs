@@ -40,8 +40,8 @@ namespace ZargoEngine.UI
             }
             Engine.OnHud += RenderHUD;
             Engine.OnWindowPositionChanged += delegate (in Box2i position) { calculate(); };
-            GameViewWindow.OnPositionChanged += (position) => { calculate(); ; };
-            GameViewWindow.OnScaleChanged += (position) => { calculate(); ; };
+            GameViewWindow.OnPositionChanged += (position) => { calculate(); };
+            GameViewWindow.OnScaleChanged += (position) => { calculate(); };
             transform.OnPositionChanged += PositionChanged;
         }
 

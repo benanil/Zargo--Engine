@@ -24,7 +24,7 @@ namespace ZargoEngine.Rendering
         private readonly int LightSpaceLoc, BiasLoc;
         private readonly int TimeLoc;
 
-        public readonly int ModelMatrixLoc, viewProjectionLoc;
+        public readonly int ModelMatrixLoc, viewLoc, projectionLoc;
 
         public int program;
 
@@ -62,7 +62,9 @@ namespace ZargoEngine.Rendering
             CompileShader(vertexSource, fragmentSource);
 
             ModelMatrixLoc = GL.GetUniformLocation(program, "model");
-            viewProjectionLoc = GL.GetUniformLocation(program, "viewProjection");
+            projectionLoc = GL.GetUniformLocation(program, "projection");
+            viewLoc = GL.GetUniformLocation(program, "view");  
+
             TimeLoc = GL.GetUniformLocation(program, "time");
 
             // basic lighting uniforms
@@ -99,12 +101,13 @@ namespace ZargoEngine.Rendering
             SetVector3Sys(ambientColor, handeller.ambientColor);
             SetVector4Sys(sunColor, handeller.sun.sunColor);
             // set matrices
-            SetMatrix4(viewProjectionLoc, handeller.camera.ViewMatrix * handeller.camera.projectionMatrix);
+            SetMatrix4(viewLoc, handeller.camera.ViewMatrix );
+            SetMatrix4(projectionLoc, handeller.camera.projectionMatrix);
 
             if (SupportsShadows)
             {
-                SetMatrix4(LightSpaceLoc, Renderer3D.lightSpaceMatrix, true);
-                SetFloat(BiasLoc, Renderer3D.Bias);
+                SetMatrix4(LightSpaceLoc, Shadow.lightSpaceMatrix, true);
+                SetFloat(BiasLoc, Shadow.Bias);
             }
 
             if (hasIndirectLight)

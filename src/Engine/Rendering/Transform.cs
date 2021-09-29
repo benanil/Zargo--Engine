@@ -101,7 +101,7 @@ namespace ZargoEngine
             // when object moves wee need to calculate shadow
             // avoiding calculation of every children
             if (childs.Count == 0 || parent == null) {
-                Renderer3D.UpdateShadows();
+                Shadow.UpdateShadows();
             }
         }
 

@@ -5,10 +5,9 @@ float AOIntensity 0
 float specPower 1
 float roughnessPow 0
 float metalic 0
-int mode 0
 color3 specularColor <1, 1, 1>
 color4 color <1, 1, 1, 1>
-enum 1 ambient specular
-texture albedoTex ..\..\..\Assets\Images\default texture.png
-texture AOTex ..\..\..\Assets\Images\default texture.png
-texture roughnessTex ..\..\..\Assets\Images\dark_texture.png
+enum 0 ambient specular
+texture albedoTex albedoTex
+texture AOTex AOTex
+texture roughnessTex roughnessTex

@@ -1,6 +1,10 @@
 ﻿#version 330 core
-layout(location = 0) out vec4 out_color;
+layout (location = 0) out vec4 gPosition;
+layout (location = 1) out vec3 gNormal;
+layout (location = 2) out vec4 gAlbedoSpec;
 
+in vec3 FragPos;
+in vec3 Normal;
 in vec2 texCoords;
 
 uniform sampler2D texture0;
@@ -12,5 +16,5 @@ void main()
 	
 	if(col.w == 0) discard;
 
-	out_color = col;
+	gAlbedoSpec = col;
 }

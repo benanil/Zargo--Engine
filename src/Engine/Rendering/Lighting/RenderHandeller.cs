@@ -56,7 +56,7 @@ namespace ZargoEngine.Rendering
             
             sun.DrawWindow();
 
-            Renderer3D.DrawShadowSettings();
+            Shadow.DrawShadowSettings();
         }
     }
 
@@ -85,7 +85,7 @@ namespace ZargoEngine.Rendering
 
         private void ValueChanged()
         {
-            Renderer3D.UpdateShadows();
+            Shadow.UpdateShadows();
         }
 
         internal Sun() { }

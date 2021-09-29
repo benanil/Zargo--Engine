@@ -5,7 +5,6 @@ float AOIntensity 0
 float specPower 1
 float roughnessPow 0
 float metalic 0
-int mode 0
 color3 specularColor <1, 1, 1>
 color4 color <1, 1, 1, 1>
 enum 1 ambient ambient specular

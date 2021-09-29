@@ -22,19 +22,29 @@ namespace ZargoEngine
     using ZargoEngine.Rendering;
     using ZargoEngine.Editor;
     using ZargoEngine.Analysis;
-    using ZargoEngine.Helper;
     using ZargoEngine.AnilTools;
     using ZargoEngine.Media.Sound;
     using ZargoEngine.Physics;
     using Shader  = Rendering.Shader;
     using Texture = Rendering.Texture;
     using static System.Windows.Forms.SystemInformation;
+    using System.Collections.Generic;
 
     public class Engine : GameWindow
     {
         public static Engine instance;
         public static bool IsEditor;
-        private static EditorWindow[] editorWindows;
+        private static List<IDrawable> editorWindows;
+        public static void AddWindow(IDrawable drawable)
+        {
+            editorWindows.Add(drawable);
+        }
+
+        public static void RemoveWindow(IDrawable drawable)
+        {
+            editorWindows.Remove(drawable);
+        }
+
         private ImGuiController _Imguicontroller;
         private Camera camera;
 
@@ -65,10 +75,11 @@ namespace ZargoEngine
 
         public Engine(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings) : base(gameWindowSettings, nativeWindowSettings) {}
 
+
         protected override void OnLoad()
         {
             base.OnLoad();
-            GL.ClearColor(Color4.Gray);
+            GL.ClearColor(Color4.Black);
 
 #if Editor
             IsEditor = true;
@@ -79,7 +90,6 @@ namespace ZargoEngine
             LoadGUI();
         }
 
-        private int screenVao, screenVbo;
 
         private void LoadScene()
         {
@@ -88,26 +98,6 @@ namespace ZargoEngine
             AssetManager.LoadDefaults();
 
             PostProcessingShader = AssetManager.GetShader("Shaders/PostProcessing.vert", "Shaders/PostProcessing.glsl");
-
-            // initialize screen buffer
-            { 
-                float[] VertexData =
-                {
-                   // positions    // texture Coords
-                    -1.0f,  1.0f   , 0.0f, 1.0f,
-                    -1.0f, -1.0f   , 0.0f, 0.0f,
-                     1.0f,  1.0f   , 1.0f, 1.0f,
-                     1.0f, -1.0f   , 1.0f, 0.0f
-                };
-            
-                screenVao = GL.GenVertexArray();
-                GL.BindVertexArray(screenVao);
-            
-                screenVbo = GL.GenBuffer();
-                GL.BindBuffer(BufferTarget.ArrayBuffer, screenVbo);
-                GL.BufferData(BufferTarget.ArrayBuffer, sizeof(float) * 16, VertexData, BufferUsageHint.StaticDraw);
-                GL.VertexAttribPointer(0, 4, VertexAttribPointerType.Float, false, sizeof(float) * 4, IntPtr.Zero);
-            }
 
             new AudioContext();
 
@@ -133,7 +123,7 @@ namespace ZargoEngine
 
         private unsafe void LoadGUI()
         {
-            editorWindows = new EditorWindow[]
+            editorWindows = new List<IDrawable>
             {
                 new Inspector(),
                 new Hierarchy(),
@@ -160,7 +150,7 @@ namespace ZargoEngine
 
         private static void PrepareRenderingScene()
         { 
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
+            GL.Clear(ClearBufferMask.ColorBufferBit);
 
             //GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.CullFace);
@@ -172,20 +162,24 @@ namespace ZargoEngine
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
             GL.Disable(EnableCap.DepthTest);
         }
+        
 
         protected override void OnRenderFrame(FrameEventArgs args)
         {
             // actually we are requesting shadow calculation we are not calculating
-            Renderer3D.CalculateShadows();
+            Shadow.CalculateShadows();
 
-            // first pass render whole scene
+            SSAO.CalculateSSAO(out int ssaoTexture);
+
+            GL.Clear(ClearBufferMask.ColorBufferBit); // clearing buffer things from ssao
+            // classic scene rendering with uı and gizmo
             SceneFrameBuffer.Bind();
             {
                 PrepareRenderingScene();
-
                 skybox.Use(camera);
+            
                 GL.Enable(EnableCap.DepthTest);
-
+            
                 Renderer3D.RenderMaterials(renderHandeller);
                 SceneManager.currentScene?.Render();
                 Gizmos.Render();
@@ -200,7 +194,7 @@ namespace ZargoEngine
                 {
                     //prepare
                     PrepareScreenQuad();
-                    GL.BindVertexArray(screenVao);
+                    GL.BindVertexArray(Renderer3D.screenVao);
                     GL.EnableVertexAttribArray(0);
 
                     GL.Uniform1(1, renderHandeller.gamma);
@@ -209,7 +203,8 @@ namespace ZargoEngine
                     
                     GL.ActiveTexture(TextureUnit.Texture0);
                     GL.BindTexture(TextureTarget.Texture2D, SceneFrameBuffer.texID);
-                    
+                    GL.ActiveTexture(TextureUnit.Texture1);
+                    GL.BindTexture(TextureTarget.Texture2D, ssaoTexture);
                     // draw
                     GL.DrawArrays(PrimitiveType.TriangleStrip, 0, 4);
 
@@ -243,7 +238,10 @@ namespace ZargoEngine
         {
             GameViewWindow.Render();
             renderHandeller.DrawWindow();
-            editorWindows.Foreach(x => x.DrawWindow());
+            foreach (var window in editorWindows)
+            {
+                window.DrawWindow();
+            }
         }
 
         protected override void OnUpdateFrame(FrameEventArgs args)
@@ -304,7 +302,6 @@ namespace ZargoEngine
         }
 
         public static void LogGame() {
-            Renderer3D.DebugMatrix();
             GC.Collect();
         }
 

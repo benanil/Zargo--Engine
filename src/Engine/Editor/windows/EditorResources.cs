@@ -4,6 +4,8 @@ using ImGuiNET;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using ZargoEngine.AnilTools;
 using ZargoEngine.Helper;
 using ZargoEngine.Rendering;
 
@@ -44,10 +46,22 @@ namespace ZargoEngine.Editor
         const byte MaxFileNameLenght = 10;
         static readonly Vector2 backButtonSize = new Vector2(12, 12);
 
+        private bool itemOpen, testOpen;
+
         public override void DrawWindow()
         {
             if (ImGui.Begin(title, ref windowActive, ImGuiWindowFlags.None | ImGuiWindowFlags.AlwaysVerticalScrollbar))
             {
+
+                if (ImGui.BeginTabBar("Creation"))
+                {
+                    if (ImGui.TabItemButton("Create"))
+                    {
+                        CreateMaterial();
+                    }
+                }
+                ImGui.EndTabBar();
+
                 Hovered = ImGui.IsWindowHovered();
                 Focused = ImGui.IsWindowFocused();
 
@@ -67,6 +81,8 @@ namespace ZargoEngine.Editor
                         return;
                     }
                 }
+
+                ImGui.SameLine();
 
                 ImGui.SameLine();
                 ImGui.Text(currentDirectory);
@@ -167,6 +183,45 @@ namespace ZargoEngine.Editor
             }
             ImGui.End();
         }
+
+        enum CreationState : byte
+        { 
+            none, material
+        }
+
+        private void CreateMaterial()
+        {
+            string materialName = string.Empty;
+            CreationState creationState = CreationState.none;
+
+            new TempraryWindow("Create", () =>
+            {
+                if (ImGui.BeginTabBar("Create State"))
+                {
+                    if (ImGui.TabItemButton("Material"))
+                    {
+                        creationState = CreationState.material;
+                    }
+                }
+                ImGui.EndTabBar();
+
+                if (creationState == CreationState.material)
+                {
+                    GUI.TextField(ref materialName, "material name");
+
+                    if (ImGui.Button("create")) {
+                        Material mat = new Material(AssetManager.DefaultMaterial.shader);
+                        mat.name = materialName;
+                        mat.SaveToFile();
+                        return true;
+                    }
+                    if (ImGui.Button("ok")) return true;
+                }
+
+                return false;
+            });
+        }
+
         protected override void OnGUI() {}
 
         // visual improwment: generate texture prewiew for texture files

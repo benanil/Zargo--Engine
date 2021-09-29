@@ -359,9 +359,9 @@ namespace ZargoEngine.UI
         }
     }
 
-    public sealed class Font
+    public readonly struct Font
     {
-        private readonly Character[] characters = new Character[101];
+        private readonly Character[] characters;
         public readonly Texture texture;
 
         public Font(Character[] characters, Texture texture)

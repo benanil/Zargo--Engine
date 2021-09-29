@@ -135,7 +135,7 @@ namespace ZargoEngine.Editor
         }
 
 
-        public static void TextureField(in string title, ref int textureID)
+        public static void TextureField(in string title, ref int textureID, ref string texturePath)
         {
             ImGui.BeginGroup();
             {
@@ -157,11 +157,24 @@ namespace ZargoEngine.Editor
                 }
                 
                 int changedTextureID = 0;
-                DropUIElementString(EditorResources.TEXTURE, (filename) => changedTextureID = AssetManager.GetTexture(filename).texID);
-                RightClickPopUp("edit", new TitleAndAction("reset", () => changedTextureID = AssetManager.DefaultTexture.texID));
+                string changedTexturePath = string.Empty;
+                
+                DropUIElementString(EditorResources.TEXTURE, (filename) =>
+                {
+                    Rendering.Texture texture = AssetManager.GetTexture(filename);
+                    changedTextureID = texture.texID;
+                    changedTexturePath = texture.path; 
+                });
+                RightClickPopUp("edit", new TitleAndAction("reset", () =>
+                {
+                    changedTextureID = AssetManager.DefaultTexture.texID;
+                    changedTextureID  = AssetManager.DefaultTexture.texID;
+                    changedTexturePath = AssetManager.DefaultTexture.path;
+                }));
                 
                 if (changedTextureID != 0) { // texture changed
                     textureID = changedTextureID;
+                    texturePath = changedTexturePath;
                 }
             }
             ImGui.EndGroup();
