@@ -26,9 +26,11 @@ namespace ZargoEngine.Rendering
         private int vaoID, vboID;
 
         private LinePoints points;
+        public bool Enabled;
 
         public Line(in Vector3 startPoint,in Vector3 endPoint, System.Numerics.Vector4 color = default)
         {
+            Enabled = true;
             ModelMatrix = Matrix4.Identity;
             LineWidth = 2f;
 
@@ -41,12 +43,12 @@ namespace ZargoEngine.Rendering
             GenerateVaoVbo(ref points, out vaoID, out vboID);
 
             Invalidate(startPoint, endPoint);
-            
             Gizmos.Register(this);
         }
 
         public Line(Transform transform, in Vector3 startPoint, in Vector3 endPoint, System.Numerics.Vector4 color = default)
         {
+            Enabled = true;
             ModelMatrix = transform.Translation;
             LineWidth = 2f;
 
@@ -60,9 +62,14 @@ namespace ZargoEngine.Rendering
 
             Invalidate(startPoint, endPoint);
 
-            transform.OnTransformChanged += Transform_OnTransformChanged;
+            ConnectTransform(transform);
 
             Gizmos.Register(this);
+        }
+
+        public void ConnectTransform(Transform transform)
+        { 
+            transform.OnTransformChanged += Transform_OnTransformChanged;
         }
 
         private void Transform_OnTransformChanged([System.Runtime.InteropServices.In] ref Matrix4 transform)
@@ -83,7 +90,7 @@ namespace ZargoEngine.Rendering
             // binds View matrix projection matrix and color to the shader
             GizmoBase.GizmoShader.Use();
             GizmoBase.GizmoShader.SetMatrix4Location(GizmoBase.GizmoShader.viewProjectionLoc, 
-                                                     Camera.main.GetViewMatrix() * Camera.main.GetGetProjectionMatrix(), true);
+                                                     Camera.main.GetViewMatrix() * Camera.main.GetProjectionMatrix(), true);
             Shader.SetVector4Sys(GizmoBase.GizmoShader.GetUniformLocation("color"), color);
 
             GizmoBase.GizmoShader.SetMatrix4Location(GizmoBase.GizmoShader.ModelMatrixLoc, ModelMatrix, true);

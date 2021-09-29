@@ -1,6 +1,4 @@
-﻿using Assimp;
-
-namespace ZargoEngine
+﻿namespace ZargoEngine
 {
     public static class EngineConstsants
     {
@@ -14,7 +12,7 @@ namespace ZargoEngine
                             vert = ".vert", frag  = ".frag" ,
                             dae =  ".dae" , mat   = ".mat"  ; 
 
-        public static readonly Vector2D Zero2 = new Vector2D(0, 0);
-        public static readonly Vector3D Zero  = new Vector3D(0, 0, 0);
+        public static readonly Assimp.Vector2D Zero2 = new Assimp.Vector2D(0, 0);
+        public static readonly Assimp.Vector3D Zero  = new Assimp.Vector3D(0, 0, 0);
     }
 }

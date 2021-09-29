@@ -7,12 +7,12 @@ namespace ZargoEngine.AnilTools
 {
     public class RotateTask : TransformTask
     {
-        private readonly Quaternion targetRotation;
+        private readonly Quaternion _targetRotation;
 
         public override bool IsFinished()
         {
-            if (from.rotation.Angle(targetRotation) < 1){
-                from.rotation = targetRotation;
+            if (from.rotation.Angle(_targetRotation) < 1){
+                from.rotation = _targetRotation;
                 return true;
             }
             return false;
@@ -20,8 +20,8 @@ namespace ZargoEngine.AnilTools
 
         public override bool Proceed()
         {
-            if (moveType == MoveType.lerp)        Quaternion.Slerp(from.rotation, targetRotation, Time.DeltaTime * speed);
-            if (moveType == MoveType.MoveTowards) targetRotation.RotateTowards(targetRotation, Time.DeltaTime * speed);
+            if (moveType == MoveType.lerp)        Quaternion.Slerp(from.rotation, _targetRotation, Time.DeltaTime * speed);
+            if (moveType == MoveType.MoveTowards) _targetRotation.RotateTowards(_targetRotation, Time.DeltaTime * speed);
             if (moveType == MoveType.curve) { } // comining
             return base.Proceed();
         }
@@ -31,7 +31,7 @@ namespace ZargoEngine.AnilTools
                           Action endAction) : base(from, transformationFlags, speed, updateType, moveType, animationCurve, endAction)
         {
             currentTask = this;
-            this.targetRotation = targetRotation;
+            this._targetRotation = targetRotation;
         }
     }
 }

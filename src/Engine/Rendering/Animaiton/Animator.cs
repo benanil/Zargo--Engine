@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using OpenTK.Mathematics;
 using Assimp;
 
@@ -7,7 +8,6 @@ using Assimp;
 namespace ZargoEngine.Rendering
 {
     using Helper;
-    using Mathmatics;
     using System;
     using aiMatrix4x4  = Matrix4x4;
     using aiQuaternion = Assimp.Quaternion;
@@ -295,13 +295,10 @@ namespace ZargoEngine.Rendering
 
         private bool GetChannel(Node node, out NodeAnimationChannel channel)
         {
-            foreach (NodeAnimationChannel c in animation.NodeAnimationChannels)
+            foreach (var c in animation.NodeAnimationChannels.Where(c => c.NodeName == node.Name))
             {
-                if (c.NodeName == node.Name)
-                {
-                    channel = c;
-                    return true;
-                }
+                channel = c;
+                return true;
             }
 
             channel = null;

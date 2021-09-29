@@ -11,14 +11,8 @@ namespace ZargoEngine
     
     public class FirstBehaviour : MonoBehaviour
     {
-        public int denemeInt;
-        [Slider]
-        public float denemeFloat;
-        public string deneme;
-        public bool denemeBool;
-        public Vector3 denemeVector;
-        public Color4 denemeColor;
 
+        [NonSerialized]
         public ImGuiBackendFlags backendFlags;
 
         public AudioClip sound;

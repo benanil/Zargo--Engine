@@ -11,10 +11,10 @@ namespace ZargoEngine.Editor.Attributes
     public class DrawIfAttribute : Attribute
     {
         public string methodName;
-        public object? otherObject;
+        public object otherObject;
         public Condition condition;
 
-        public bool Proceed(object? value, object? value1)
+        public bool Proceed(object value, object value1)
         {
             if (condition == Condition.smaller || condition == Condition.bigger)
             {
@@ -38,7 +38,7 @@ namespace ZargoEngine.Editor.Attributes
             };
         }
 
-        public DrawIfAttribute(string methodName,Condition condition = Condition.equal,object? otherObject = null)
+        public DrawIfAttribute(string methodName,Condition condition = Condition.equal,object otherObject = null)
         {
             this.methodName = methodName;
             this.condition = condition;

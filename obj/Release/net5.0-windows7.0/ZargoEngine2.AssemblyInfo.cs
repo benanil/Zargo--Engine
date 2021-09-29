@@ -13,6 +13,7 @@ using System.Reflection;
 
 [assembly: System.Reflection.AssemblyCompanyAttribute("Middle Games")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
+[assembly: System.Reflection.AssemblyCopyrightAttribute("as is us :D nothing matters you can use all of the code")]
 [assembly: System.Reflection.AssemblyDescriptionAttribute("a game engine built with OpenTK")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.1.0")]
 [assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.1")]

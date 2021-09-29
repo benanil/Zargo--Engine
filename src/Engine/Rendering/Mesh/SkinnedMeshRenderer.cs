@@ -4,7 +4,7 @@ namespace ZargoEngine.Rendering
     using Helper;
     using OpenTK.Graphics.OpenGL4;
 
-    public class SkinnedMeshRenderer : RendererBase
+    public class SkinnedMeshRenderer : MeshRenderer
     {
         private readonly Animator animator;
 

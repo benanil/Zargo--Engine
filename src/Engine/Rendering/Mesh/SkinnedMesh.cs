@@ -1,7 +1,6 @@
 ﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using System;
-using System.Threading.Tasks;
 
 #nullable disable warnings
 
@@ -29,7 +28,7 @@ namespace ZargoEngine.Rendering
         }
 
         // call this after some calculation and here you go you deformed mesh multithreading recomennded use paralel class
-        public override void LoadBuffers()
+        public sealed override void LoadBuffers()
         {
             vaoID = GL.GenVertexArray();
             GL.BindVertexArray(vaoID);

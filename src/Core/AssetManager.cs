@@ -9,8 +9,13 @@ using ZargoEngine.Rendering;
 
 namespace ZargoEngine
 {
+    using static EngineConstsants;
+    using Helper;
+    using AIScene = Assimp.Scene;
+
     public static class AssetManager
     {
+
         public static readonly string AssetsPath = Directory.GetCurrentDirectory() + @"..\..\..\..\Assets\";           // this paths must change when game builded
         public static readonly string AssetsPathBackSlash = Directory.GetCurrentDirectory() + @"..\..\..\..\Assets\";  // this paths must change when game builded
         private static readonly string materialDirectory = AssetsPath + "Materials";
@@ -29,33 +34,21 @@ namespace ZargoEngine
             GetTexture("Images/default texture.png");
             GetTexture("Images/dark_texture.png");
 
+            GetShader("Shaders/pbr/pbr.vert", "Shaders/pbr/pbr.frag");
             GetShader("Shaders/Basic.vert", "Shaders/litShader.frag");
             GetShader("Shaders/Basic.vert", "Shaders/Basic.frag");
-            GetShader("Shaders/pbr/pbr.vert", "Shaders/pbr/pbr.frag");
 
             if (!Directory.Exists(materialDirectory)) Directory.CreateDirectory(materialDirectory);
 
-            AddMaterial("pbr", shaders[2]);
-            AddMaterial("Lit", shaders[0]);
-            AddMaterial("Basic", shaders[1]);
+            // create default ones
+            AddMaterial("pbr", shaders[0]); 
+            AddMaterial("Lit", shaders[1]);
+            AddMaterial("Basic", shaders[2]);
         }
 
         public static string GetRelativePath(in string file)
         {
             return Path.GetRelativePath(Directory.GetCurrentDirectory(), file);
-        }
-
-        public static void AddMaterial(string name, Shader shader)
-        { 
-            if (File.Exists(AssetsPath + $"Materials/{name}.mat"))
-                materials.Add(Material.LoadFromFile(AssetsPath + $"Materials/{name}.mat"));
-            else
-            {
-                Material material = new Material(shader);
-                material.name = name;
-                materials.Add(material);
-                material.SaveToFile();
-            }
         }
 
         public static Shader GetShader(string vertexPath, string fragmentPath)
@@ -89,30 +82,64 @@ namespace ZargoEngine
             return texture;
         }
 
-        public static Mesh GetMesh(in string path) => GetMeshFullPath<Mesh>(ProceedPathFunc(path));
-        public static SkinnedMesh GetSkinnedMesh(in string path) => GetMeshFullPath<SkinnedMesh>(ProceedPathFunc(path));
+        public static Mesh GetMesh(in string path, in string name) => GetMeshFullPath<Mesh>(path + '|' + name);
+        /// <param name="path">path or identifier. identifier = path + | + name</param>
+        public static Mesh GetMesh(in string path) => GetMeshFullPath<Mesh>(path);
+        /// <param name="path">path or identifier. identifier = path + | + name</param>
+        public static SkinnedMesh GetSkinnedMesh(in string path) => GetMeshFullPath<SkinnedMesh>(path);
 
-        public static T GetMeshFullPath<T>(string path) where T : MeshBase
+        /// <param name="identifier"> identifier = path + | + name</param>
+        public static T GetMeshFullPath<T>(string identifier) where T : MeshBase
         {
-            ProceedPath(ref path);
+            MeshBase finded = meshes.Find(mesh => mesh.GetIdentifier() == identifier);
 
-            if (!File.Exists(path)) {
-                Debug.Log($"mesh path is not exist type:{typeof(T)} path:{path}");
-                return default;
-            }
-
-            MeshBase meshBase = meshes.Find(mesh => mesh.path == path); 
-            if (meshBase != null) return meshBase as T;
+            if (finded != null) return finded as T;
 
             if (typeof(T) == typeof(SkinnedMesh))
-                meshBase = null;//AssimpImporter.LoadSkinnedMeshJava();
-            else meshBase = new Mesh(GetRelativePath(path));
+                finded = null;//AssimpImporter.LoadSkinnedMeshJava();
+            else
+            {
+                AssimpImporter.ImportBinaryMeshes(GetIdentifiersPath(identifier)); // this line add meshes
+             
+                finded = meshes.Find(m => m.GetIdentifier() == identifier);
+                if (finded == null) {
+                    Debug.LogError("AssetManager cannot reach Mesh identifier: " + identifier);
+                }
+            }
 
-            meshes.Add(meshBase);
-
-            return meshBase as T;
+            return finded as T;
         }
 
+        private static string GetIdentifiersPath(string identifier)
+        {
+            ushort index = 0;
+            // identifier includes path and name seperate path for importing as binary
+            for (ushort i = 0; i < identifier.Length; i++) {
+                if (identifier[i] == '|') {
+                    index = i;
+                    break;
+                }
+            }
+            // for identifiers name: identifier.Remove(0, index + 1);
+            return identifier.Remove(index, identifier.Length - index);
+        }
+
+        public static void AddMaterial(string name, Shader shader)
+        {
+            string materialPath = AssetsPath + $"Materials/{name}.mat";
+            if (File.Exists(materialPath))
+                Material.LoadFromFile(materialPath);
+            else
+            {
+                Material material = new Material(shader);
+                material.name = name;
+                material.path = materialPath;
+                material.SaveToFile();
+            }
+        }
+
+        public static void AddMaterial(Material material) => materials.Add(material);
+        
         internal static Material GetMaterial(string materialPath)
         {
             ProceedPath(ref materialPath);
@@ -121,11 +148,16 @@ namespace ZargoEngine
 
             if (material != null) return material;
 
-            material = Material.LoadFromFile(materialPath);
-            materials.Add(material);
+            if (!File.Exists(materialPath)) {
+                material = new Material() { name = Path.GetFileNameWithoutExtension(materialPath) , path = materialPath };
+                material.LoadFromOtherMaterial(DefaultMaterial);
+            }
+            else { 
+                material = Material.LoadFromFile(materialPath);
+            }
+            
             return material;
         }
-
 
         private static void ProceedPath(ref string path)
         {

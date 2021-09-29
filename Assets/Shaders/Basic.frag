@@ -31,15 +31,16 @@ void main()
     vec3 LightDirection = vec3(0, sin(sunAngle), cos(sunAngle));
     
     vec3 tex = texture(albedoTex, texCoord).xyz;
-    float ao = 1 - max(.2 , min(1, texture(AOTex, texCoord).r * AOIntensity));
+    // ao tex defaultly white
+    float ao = texture(AOTex, texCoord).r * AOIntensity;
 
     vec3 L = normalize(LightDirection) * sunIntensity;
     
-    float NdotL = clamp(dot(Normal,L),0.0,1.0);
+    float NdotL = clamp(dot(Normal,L), 0.2, 1.0);
 
-    vec3 diffuseTerm = sunColor * NdotL;
+    vec3 diffuseTerm = tex * sunColor * NdotL * ao;
 
-    vec3 result = (ambientColor * ambientStrength + diffuseTerm) * tex;
+    vec3 ambient = ambientColor * (ambientStrength / 10);
 
-    outputColor = vec4(result * ao, 1.0) * color;
+    outputColor = vec4(diffuseTerm + ambient, 1.0) * color;
 }

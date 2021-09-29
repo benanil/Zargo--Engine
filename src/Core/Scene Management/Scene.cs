@@ -1,35 +1,34 @@
 ﻿using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using System.IO;
-using System.Xml.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ZargoEngine.Rendering;
-using ZargoEngine.Bindings;
-using ZargoEngine.Editor;
-using ZargoEngine.Core;
-using ZargoEngine.SaveLoad;
 using ZargoEngine.AnilTools;
-using ZargoEngine.Physics;
 
 #nullable disable warnings
 
-namespace ZargoEngine
-{
+namespace ZargoEngine {
+    using Rendering;
+    using Bindings;
+    using Editor;
+    using SaveLoad;
+
     public class Scene : IDisposable
     {
         public string name;
-        public RenderHandeller renderHandeller;
 
         public List<GameObject> gameObjects = new List<GameObject>();
-        public List<RendererBase> meshRenderers = new List<RendererBase>();
 
-        private bool started;
+        public bool isPlaying;
         private Vector2 mouseOldPos;
         public float cameraRotateSpeed = 100, cameraMoveSpeed = 3f;
 
-        Camera camera => renderHandeller.camera;
+        public PlayerCamera playerCamera;
+        
+        SceneSaveData sceneSaveData;
+
+        public string path;
 
         public int GetUniqueID()
         {
@@ -56,33 +55,53 @@ namespace ZargoEngine
             return null;
         }
 
-        public Scene(RenderHandeller renderHandeller, string name)
+        public Scene(string path)
         {
             this.name = SceneManager.GetUniqeName(name);
-            this.renderHandeller = renderHandeller;
+            this.path = path;
+            SceneManager.AddScene(this);
         }
 
-        public Scene(RenderHandeller renderHandeller)
+        /// <summary> for creating new scene </summary>
+        public Scene(RenderSaveData data, string name)
         {
-            this.name = SceneManager.GetName();
-            this.renderHandeller = renderHandeller;
+            this.name = SceneManager.GetUniqeName(name);
+            path = $"{AssetManager.AssetsPath}Scenes{Path.DirectorySeparatorChar}{name}.scene"; 
+            RenderConfig.SetData(data);
+            SceneManager.AddScene(this);
+            var lastScene = SceneManager.currentScene;
+            SceneManager.currentScene = this;
+            GameObject go = new GameObject("Main Camera");
+            playerCamera = new PlayerCamera(go);
+
+            new GameObject("First Obj");
+
+            SceneManager.currentScene = lastScene;
+            SaveScene();
+            DestroyScene();
         }
 
         public void Start()
         {
-            LoadScene();
-
             mouseOldPos = Input.MousePosition();
-            started = true;
+            isPlaying = true;
 
-            for (short i = 0; i < gameObjects.Count; i++) {
+            for (int i = 0; i < gameObjects.Count; i++) { 
                 gameObjects[i].Start();
             }
         }
 
+        public void Stop()
+        {
+            isPlaying = false;
+            DestroyScene();
+            SceneManager.currentScene = this;
+            LoadScene();
+        }
+
         public void Render()
         {
-            if (!started) return;
+            if (!isPlaying) return;
 
             for (short i = 0; i < gameObjects.Count; i++) {
                 gameObjects[i].Render();
@@ -91,17 +110,25 @@ namespace ZargoEngine
 
         public void Update()
         {
-            if (!started) return;
+            SceneMovement();
+        
+            if (!isPlaying) {
+                if (Input.GetKey(Keys.F5)) {
+                    Start();
+                }
+                return;
+            }
+            else {
+                if (Input.GetKey(Keys.F5)) {
+                    Stop();
+                    return;
+                }
+            }
 
             for (int i = 0; i < gameObjects.Count; i++){
                 gameObjects[i].Update();
             }
 
-            if (Input.GetKeyDown(Keys.Enter) || Input.GetKeyDown(Keys.KeyPadEnter)){
-                LogGame();
-            }
-
-            SceneMovement();
         }
 
         public void PhysicsUpdate()
@@ -115,87 +142,57 @@ namespace ZargoEngine
             }
         }
 
-        public void LogGame()
-        {
-            Debug.Log("model: " + meshRenderers[0].transform.Translation);
-            Debug.Log("view: " + RenderHandeller.instance.camera.ViewMatrix);
-            Debug.Log("projection: " + RenderHandeller.instance.camera.projectionMatrix);
-        }
-
-        private const string SceneSaveFileName = "/SceneSave.xml";
-        private const string RenderSettingsFileName = "/RenderSettings.xml";
 
         public void SaveScene()
         {
-            string saveDirectory = Path.Combine(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Middle Games"), ProjectSettings.ProjectName);
-            if (!Directory.Exists(saveDirectory)) Directory.CreateDirectory(saveDirectory);
+            if (!Directory.Exists(Path.Combine(AssetManager.AssetsPath, "Scenes"))) Directory.CreateDirectory(Path.Combine(AssetManager.AssetsPath, "Scenes"));
 
-            // save Scene
-            { 
-                string sceneSaveFilePath = saveDirectory + SceneSaveFileName;
-                XmlSerializer serializer  = new XmlSerializer(typeof(SceneSaveData));
+            sceneSaveData = new SceneSaveData(name, gameObjects);
+            
+            Serializer.SerializeScene(sceneSaveData, path);
 
-                FileStream stream;
-                if (!File.Exists(sceneSaveFilePath)) 
-                     stream = File.Create(sceneSaveFilePath);
-                else stream = new FileStream(sceneSaveFilePath, FileMode.OpenOrCreate);
-                
-                serializer.Serialize(stream, new SceneSaveData(gameObjects, camera));
-                stream.Close(); stream.Dispose();
-            }
-
-            // save render settings
-            {
-                string renderSettingsFilePath = saveDirectory + RenderSettingsFileName;
-                XmlSerializer serializer = new XmlSerializer(typeof(RenderSaveData));
-
-                FileStream stream;
-                if (!File.Exists(renderSettingsFilePath))
-                     stream = File.Create(renderSettingsFilePath);
-                else stream = new FileStream(renderSettingsFilePath, FileMode.OpenOrCreate);
-
-                serializer.Serialize(stream, new RenderSaveData(renderHandeller));
-                stream.Close(); stream.Dispose();
-            }
-
-            Debug.Log("scene saved");
+            Debug.LogWarning("scene saved");
         }
 
         public void LoadScene()
         {
-            string saveDirectory = Path.Combine(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Middle Games"), ProjectSettings.ProjectName);
-            if (!Directory.Exists(saveDirectory)) Directory.CreateDirectory(saveDirectory);
+            if (!Directory.Exists(AssetManager.AssetsPath + "Scenes")) Directory.CreateDirectory(AssetManager.AssetsPath + "Scenes");
 
-            if (File.Exists(saveDirectory + SceneSaveFileName))
-            { 
-                using (StreamReader reader = new StreamReader(saveDirectory + SceneSaveFileName))
-                {
-                    XmlSerializer serializer = new XmlSerializer(typeof(SceneSaveData));
-
-                    SceneSaveData? holder = (SceneSaveData)serializer.Deserialize(reader);
-
-                    holder?.savedGameObjects.ForEach(x => x.Load());
-                    //camera.SetRotation(holder.cameraProperties);
-                }
-            }
-
-            if (File.Exists(saveDirectory + RenderSettingsFileName))
+            if (File.Exists(path))
             {
-                using (StreamReader reader1 = new StreamReader(saveDirectory + RenderSettingsFileName))
-                {
-                    XmlSerializer serializer = new XmlSerializer(typeof(RenderSaveData));
+                sceneSaveData = Serializer.DeserializeScene(path);
+                name = sceneSaveData.Name;
 
-                    ((RenderSaveData)serializer.Deserialize(reader1))?.Apply(renderHandeller);
+                if (sceneSaveData != null)
+                {
+                    for (int i = 0; i < sceneSaveData.savedGOs.Length; i++)
+                    {
+                        sceneSaveData.savedGOs[i].Generate();
+                    }
+                
+                    Camera.SceneCamera.SetRotation(sceneSaveData.cameraPos, sceneSaveData.cameraForward, sceneSaveData.cameraUp);
+                    RenderConfig.SetData(sceneSaveData.RenderSaveData);
                 }
             }
+            
+            playerCamera = SceneManager.FindObjectOfType<PlayerCamera>();
+            if (playerCamera == null) {
+                GameObject go = new GameObject("Main Camera");
+                playerCamera = new PlayerCamera(go);
+            }
+            
+            Debug.LogWarning("Scene Loaded");
         }
 
         bool zooming;
 
         private unsafe void SceneMovement()
         {
+            if (!Engine.IsEditor || isPlaying) return;
+
             if (Input.GetKey(Keys.LeftControl) && Input.GetKeyUp(Keys.S))
             {
+                Debug.LogWarning("scene saved via ctrl+s");
                 SaveScene();
             }
 
@@ -204,43 +201,45 @@ namespace ZargoEngine
                 Inspector.Duplicate();
             }
 
-            if (Input.MouseButton(MouseButton.Left))
-            {
-                if (BepuHandle.Raycast(new Ray(camera.Position, camera.Front), out HitHandler hit))
-                {
-                    Debug.Log("hit: " + hit);
-                }
-                #region bulletRaycast
-                // if (BulletPhysics.RayCastCameraMiddle(out RayResult callback))
-                // {
-                //     var hitTransform = callback.GetTransform();
-                //     sphere.transform.position = callback.HitPointWorld.BulletToTK();
-                // 
-                //     if (hitTransform.gameObject.TryGetComponent(out MeshRenderer meshRenderer))
-                //     {
-                //         // if another object chosed and chosen object are gameobject 
-                //         if (hitTransform.gameObject != Inspector.currentObject )
-                //         {
-                //             Debug.Log("has transform");
-                //             if (Inspector.currentObject is GameObject oldGO)
-                //             {
-                //                 if (oldGO.TryGetComponent(out MeshRenderer oldRenderer))
-                //                 {
-                //                     oldRenderer.color -= new System.Numerics.Vector4(.5f, 0, 0, 0);
-                //                 }
-                //             }
-                //             meshRenderer.color += new System.Numerics.Vector4(.5f, 0, 0, 0);
-                //         }
-                //     }
-                // 
-                //     Inspector.currentObject = hitTransform.gameObject;
-                // 
-                //     Debug.Log("hit name: " + hitTransform.name);
-                // }
-                #endregion
-            }
+            #region raycasting
+            // if (Input.MouseButton(MouseButton.Left))
+            // {
+            //     if (BepuHandle.Raycast(new Ray(Camera.SceneCamera.Position, Camera.SceneCamera.Front), out HitHandler hit))
+            //     {
+            //         Debug.Log("hit: " + hit);
+            //     }
+            //     #region bulletRaycast
+            //     // if (BulletPhysics.RayCastCameraMiddle(out RayResult callback))
+            //     // {
+            //     //     var hitTransform = callback.GetTransform();
+            //     //     sphere.transform.position = callback.HitPointWorld.BulletToTK();
+            //     // 
+            //     //     if (hitTransform.gameObject.TryGetComponent(out MeshRenderer meshRenderer))
+            //     //     {
+            //     //         // if another object chosed and chosen object are gameobject 
+            //     //         if (hitTransform.gameObject != Inspector.currentObject )
+            //     //         {
+            //     //             Debug.Log("has transform");
+            //     //             if (Inspector.currentObject is GameObject oldGO)
+            //     //             {
+            //     //                 if (oldGO.TryGetComponent(out MeshRenderer oldRenderer))
+            //     //                 {
+            //     //                     oldRenderer.color -= new System.Numerics.Vector4(.5f, 0, 0, 0);
+            //     //                 }
+            //     //             }
+            //     //             meshRenderer.color += new System.Numerics.Vector4(.5f, 0, 0, 0);
+            //     //         }
+            //     //     }
+            //     // 
+            //     //     Inspector.currentObject = hitTransform.gameObject;
+            //     // 
+            //     //     Debug.Log("hit name: " + hitTransform.name);
+            //     // }
+            //     #endregion
+            // }
+            #endregion raycasting
 
-            if (zooming) return;
+            if (zooming || !SceneViewWindow.instance.Focused) return;
 
             // when press f key camera directly goes sellected object
             if (Input.GetKeyUp(Keys.F))
@@ -251,13 +250,13 @@ namespace ZargoEngine
 
                     RegisterUpdate.UpdateWhile(() =>
                     {
-                        camera.Position = Vector3.Lerp(camera.Position, go.transform.position, Time.DeltaTime * 5);
-                        camera.UpdateVectors();
-                    }, () => go.transform.Distance(Camera.main.Position) > 1 && !Input.Any(), endAction: () => zooming = false);
+                        Camera.SceneCamera.Position = Vector3.Lerp(Camera.SceneCamera.Position, go.transform.position, Time.DeltaTime * 5);
+                        Camera.SceneCamera.UpdateVectors();
+                    }, () => go.transform.Distance(Camera.SceneCamera.Position) > 1 && !Input.Any(), endAction: () => zooming = false);
                 }
             }
 
-            if (!Input.MouseButtonDown(MouseButton.Right) || (/*!GameViewWindow.instance.Hovered &&*/ !GameViewWindow.instance.Focused)) {
+            if (!Input.MouseButtonDown(MouseButton.Right) || (/*!GameViewWindow.instance.Hovered &&*/ !SceneViewWindow.instance.Focused)) {
                 Program.MainGame.CursorVisible = true;
                 System.Windows.Forms.Cursor.Current = System.Windows.Forms.Cursors.Default; // return default cursor
                 return;
@@ -267,33 +266,28 @@ namespace ZargoEngine
             System.Windows.Forms.Cursor.Current = System.Windows.Forms.Cursors.SizeAll;
 
             // zoom in and out with scroll
-            camera.Position += Input.ScrollY * (camera.Front * 100) * Time.DeltaTime;
+            Camera.SceneCamera.Position += Input.ScrollY * (Camera.SceneCamera.Front * 100) * Time.DeltaTime;
 
             Program.MainGame.CursorVisible = false;
             float targetMoveSpeed = Input.GetKey(Keys.LeftShift) ? cameraMoveSpeed * 8 : cameraMoveSpeed;
 
-            if (Input.GetKey(Keys.W)) camera.Position += camera.Front * targetMoveSpeed * Time.DeltaTime;
-            if (Input.GetKey(Keys.S)) camera.Position -= camera.Front * targetMoveSpeed * Time.DeltaTime;
-            if (Input.GetKey(Keys.A)) camera.Position -= camera.Right * targetMoveSpeed * Time.DeltaTime;
-            if (Input.GetKey(Keys.D)) camera.Position += camera.Right * targetMoveSpeed * Time.DeltaTime;
-            if (Input.GetKey(Keys.Q)) camera.Position -= camera.Up * targetMoveSpeed * Time.DeltaTime;
-            if (Input.GetKey(Keys.E)) camera.Position += camera.Up * targetMoveSpeed * Time.DeltaTime;
+            if (Input.GetKey(Keys.W)) Camera.SceneCamera.Position += Camera.SceneCamera.Front * targetMoveSpeed * Time.DeltaTime;
+            if (Input.GetKey(Keys.S)) Camera.SceneCamera.Position -= Camera.SceneCamera.Front * targetMoveSpeed * Time.DeltaTime;
+            if (Input.GetKey(Keys.A)) Camera.SceneCamera.Position -= Camera.SceneCamera.Right * targetMoveSpeed * Time.DeltaTime;
+            if (Input.GetKey(Keys.D)) Camera.SceneCamera.Position += Camera.SceneCamera.Right * targetMoveSpeed * Time.DeltaTime;
+            if (Input.GetKey(Keys.Q)) Camera.SceneCamera.Position -= Camera.SceneCamera.Up * targetMoveSpeed * Time.DeltaTime;
+            if (Input.GetKey(Keys.E)) Camera.SceneCamera.Position += Camera.SceneCamera.Up * targetMoveSpeed * Time.DeltaTime;
 
             Vector2 mouseDirection = Input.MousePosition() - mouseOldPos;
             if (mouseDirection.Length < 200)
             {
-                renderHandeller.camera.Pitch -= mouseDirection.Y * Time.DeltaTime * cameraRotateSpeed;
-                renderHandeller.camera.Yaw += mouseDirection.X * Time.DeltaTime * cameraRotateSpeed;
+                Camera.SceneCamera.Pitch -= mouseDirection.Y * Time.DeltaTime * cameraRotateSpeed;
+                Camera.SceneCamera.Yaw += mouseDirection.X * Time.DeltaTime * cameraRotateSpeed;
             }
 
             MouseBindings.InfiniteMouse();
 
             mouseOldPos = Input.MousePosition();
-        }
-
-        public void Stop()
-        {
-            started = false;
         }
 
         public GameObject AddGameObject(GameObject gameObject)
@@ -302,16 +296,17 @@ namespace ZargoEngine
             return gameObject;
         }
 
-        public RendererBase AddMeshRenderer(RendererBase meshRenderer)
+        internal void DestroyScene()
         {
-            meshRenderers.Add(meshRenderer);
-            return meshRenderer;
+            SceneManager.currentScene = null;
+            RenderConfig.lights.Clear(); 
+            gameObjects.ForEach(go => go.Dispose());
+            gameObjects.Clear();
         }
-
+        
         public void Dispose()
         {
-            //gameObjects.ForEach(x => Dispose());
-            meshRenderers.ForEach(x => x.Dispose());
+            DestroyScene();
             GC.SuppressFinalize(this);
         }
     }

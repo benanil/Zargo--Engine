@@ -47,7 +47,7 @@ namespace ZargoEngine.Rendering
             texID = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, texID);
             // we wrote intptr.zero cause first time we dont need to attach pixels to the image we will write it with frame buffer
-            GL.TexImage2D(TextureTarget.Texture2D, 0, pixelInternalFormat, width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, pixelInternalFormat, width, height, 0, PixelFormat.Rgb, PixelType.UnsignedByte, IntPtr.Zero);
 
             // create min mag filter
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);

@@ -24,8 +24,7 @@ namespace ZargoEngine.Mathmatics
             return devide0 / devide1 * (SecondMax - SecondMin) + SecondMin;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float Repeat(float t, float length)
+        public static float Repeat(in float t,in float length)
         {
             return (float)Math.Clamp(t - Math.Floor(t / length) * length, 0, length);
         }
@@ -33,8 +32,7 @@ namespace ZargoEngine.Mathmatics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Clamp(float value, float min, float max) => Clamp(ref value,min,max);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float Clamp(ref float value, float min, float max)
+        public static float Clamp(ref float value, in float min, in float max)
         {
             if (value < min) value = min;
             else if (value > max) value = max;
@@ -42,28 +40,23 @@ namespace ZargoEngine.Mathmatics
         }
 
         // Clamps value between 0 and 1 and returns value
-        public static float Clamp01(float value)
+        public static float Clamp01(in float value)
         {
-            if (value < 0F)      return 0F;
-            else if (value > 1F) return 1F;
-            else return value;
+            if (value < 0F) return 0F;
+            if (value > 1F) return 1F;
+            return value;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Min(in float first, in float second)
         {
-            if (first < second) return first;
-            return second;
+            return first < second ? first : second;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Max(in float first, in float second)
         {
-            if (first > second) return first;
-            return second;
+            return first > second ? first : second;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Min(params float[] value)
         {
             int smallestIndex;
@@ -75,7 +68,6 @@ namespace ZargoEngine.Mathmatics
             return value[smallestIndex];
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Max(params float[] value)
         {
             int biggestIndex;
@@ -86,9 +78,7 @@ namespace ZargoEngine.Mathmatics
             
             return value[biggestIndex];
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float SmoothDamp(float current, float target, ref float currentVelocity, float smoothTime)
+        public static float SmoothDamp(in float current, in float target, ref float currentVelocity, in float smoothTime)
         {
             return SmoothDamp(current, target, ref currentVelocity, smoothTime, float.MaxValue, Time.DeltaTime);
         }
@@ -125,8 +115,7 @@ namespace ZargoEngine.Mathmatics
             return output;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float SmoothDamp(float current, float target, ref float currentVelocity, float smoothTime, float maxSpeed)
+        public static float SmoothDamp(in float current, in float target, ref float currentVelocity, in float smoothTime, in float maxSpeed)
         {
             return SmoothDamp(current, target, ref currentVelocity, smoothTime, maxSpeed, Time.DeltaTime);
         }
@@ -140,8 +129,8 @@ namespace ZargoEngine.Mathmatics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float SmoothDampAngle(float current, float target, ref float currentVelocity, float smoothTime)
         {
-            float deltaTime = Time.DeltaTime;
-            float maxSpeed = float.MaxValue;
+            var deltaTime = Time.DeltaTime;
+            const float maxSpeed = float.MaxValue;
             return SmoothDampAngle(current, target, ref currentVelocity, smoothTime, maxSpeed, deltaTime);
         }
 
@@ -153,7 +142,6 @@ namespace ZargoEngine.Mathmatics
             return SmoothDamp(current, target, ref currentVelocity, smoothTime, maxSpeed, deltaTime);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float DeltaAngle(in float current, in float target)
         {
             float delta = Repeat(target - current, 360.0F);
@@ -162,7 +150,6 @@ namespace ZargoEngine.Mathmatics
             return delta;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float MoveTowardsAngle(in float current, float target, in float maxDelta)
         {
             float deltaAngle = DeltaAngle(current, target);
@@ -172,23 +159,21 @@ namespace ZargoEngine.Mathmatics
             return MoveTowards(current, target, maxDelta);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float LerpAngle(float a, float b, float t)
+        public static float LerpAngle(in float a, in float b, in float t)
         {
-            float delta = Repeat(b - a, 360);
+            var delta = Repeat(b - a, 360);
             if (delta > 180)
                 delta -= 360;
             return a + delta * Clamp01(t);
         }
 
-        // Interpolates between /a/ and /b/ by /t/. /t/ is clamped between 0 and 1.
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float Lerp(float a, float b, float t)
+        public static float Lerp(in float a, in float b, in float t)
         {
             return a + (b - a) * Clamp01(t);
         }
+
         public static float Diffrance(this float a, float b) => Diffrance(ref a, ref b);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static float Diffrance(this ref float a, ref float b)
         {
             return MathF.Sqrt(MathF.Pow(a-b, 2));
@@ -202,20 +187,12 @@ namespace ZargoEngine.Mathmatics
             return current + MathF.Sign(target - current) * maxDelta;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Frac(this ref float value)
         {
             return value - MathF.Truncate(value);
         }
 
-        public static float PerlinNoise(float x, float y)
-        {
-            return default;
-        }
-
-        // Interpolates between /a/ and /b/ by /t/ without clamping the interpolant.
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float LerpUnclamped(float a, float b, float t)
+        public static float LerpUnclamped(in float a, in float b, in float t)
         {
             return a + (b - a) * t;
         }

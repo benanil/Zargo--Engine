@@ -7,7 +7,7 @@ using ZargoEngine.Editor;
 namespace ZargoEngine.UI
 {
     using SysVec4 = System.Numerics.Vector4;
-    public abstract class UIbase : Component
+    public abstract class UIbase : Companent
     {
         static UIbase()
         {
@@ -28,7 +28,6 @@ namespace ZargoEngine.UI
         public UIbase(GameObject go, string path) : base(go)
         {
             if (!CanInitialize(path)) return;
-            go.AddComponent(this);
             InitializeEvents();
         }
 
@@ -40,8 +39,8 @@ namespace ZargoEngine.UI
             }
             Engine.OnHud += RenderHUD;
             Engine.OnWindowPositionChanged += delegate (in Box2i position) { calculate(); };
-            GameViewWindow.OnPositionChanged += (position) => { calculate(); ; };
-            GameViewWindow.OnScaleChanged += (position) => { calculate(); ; };
+            SceneViewWindow.OnPositionChanged += (position) => { calculate(); ; };
+            SceneViewWindow.OnScaleChanged += (position) => { calculate(); ; };
             transform.OnPositionChanged += PositionChanged;
         }
 
@@ -55,8 +54,8 @@ namespace ZargoEngine.UI
         static void CalculateWindowBottom()
         {
             var clinetRectangle = Program.MainGame.ClientRectangle.Min;
-            WindowBottom = new((int)GameViewWindow.PanelPosition.X + WindowBounds.Min.X,
-            Screen.MonitorHeight - (WindowBounds.Min.Y + (int)GameViewWindow.Height + (int)GameViewWindow.PanelPosition.Y + clinetRectangle.Y));
+            WindowBottom = new((int)SceneViewWindow.PanelPosition.X + WindowBounds.Min.X,
+            Screen.MonitorHeight - (WindowBounds.Min.Y + (int)SceneViewWindow.Height + (int)SceneViewWindow.PanelPosition.Y + clinetRectangle.Y));
         }
 
         public Box2 bounds;

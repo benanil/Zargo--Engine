@@ -7,7 +7,7 @@ using ZargoEngine.Media.Sound;
 
 namespace ZargoEngine.Sound
 {
-    public class AudioClip : Component, IDisposable
+    public class AudioClip : Companent, IDisposable
     {
         public IWaveProvider provider;
 

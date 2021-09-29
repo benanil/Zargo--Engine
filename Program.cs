@@ -5,15 +5,15 @@ using System;
 using System.Diagnostics;
 using ZargoEngine.Helper;
 
-#nullable disable warnings
-
 namespace ZargoEngine
 {
     using Image = OpenTK.Windowing.Common.Input.Image;
-    
+    using System.Threading.Tasks;
+
     public static class Program
     {
         public static Engine MainGame;
+
 
         [STAThread]
         private static void Main(string[] args)
@@ -44,5 +44,6 @@ namespace ZargoEngine
 
             game.Run();
         }
+
     }
 }

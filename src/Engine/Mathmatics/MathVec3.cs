@@ -8,7 +8,6 @@ namespace ZargoEngine.Mathmatics
 {
     public static partial class Mathmatic
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 Pow(in Vector3 x, in Vector3 y)
         {
             Vector3 rv = new Vector3();
@@ -21,23 +20,20 @@ namespace ZargoEngine.Mathmatics
             return rv;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3 V3DegreToRadian(this Vector3 from)
+        public static Vector3 V3DegreToRadian(in this Vector3 from)
         {
             return new Vector3(MathHelper.DegreesToRadians(from.X),
                                MathHelper.DegreesToRadians(from.Y),
                                MathHelper.DegreesToRadians(from.Z));
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static System.Numerics.Vector3 V3DegreToRadian(this System.Numerics.Vector3 from)
+        public static System.Numerics.Vector3 V3DegreToRadian(in this System.Numerics.Vector3 from)
         {
             return new System.Numerics.Vector3(MathHelper.DegreesToRadians(from.X),
                                MathHelper.DegreesToRadians(from.Y),
                                MathHelper.DegreesToRadians(from.Z));
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 LerpAngle(Vector3 from, in Vector3 to, in float t)
         {
             from.X = LerpAngle(from.X, to.X, t);
@@ -46,29 +42,25 @@ namespace ZargoEngine.Mathmatics
             return from;    
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector3 V3RadianToDegree(this Vector3 from)
+        public static Vector3 V3RadianToDegree(in this Vector3 from)
         {
             return new Vector3(MathHelper.RadiansToDegrees(from.X),
                                MathHelper.RadiansToDegrees(from.Y),
                                MathHelper.RadiansToDegrees(from.Z));
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static System.Numerics.Vector3 V3RadianToDegree(this System.Numerics.Vector3 from)
+        public static System.Numerics.Vector3 V3RadianToDegree(in this System.Numerics.Vector3 from)
         {
             return new System.Numerics.Vector3(MathHelper.RadiansToDegrees(from.X),
                                MathHelper.RadiansToDegrees(from.Y),
                                MathHelper.RadiansToDegrees(from.Z));
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static float Magnitude(this Vector3 value){
             float result = value.X + value.Y + value.Z;
             return result;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Clamp(this ref Vector3 value, in float min, in float max)
         {
             value.X = Clamp(value.X, min, max);
@@ -76,7 +68,6 @@ namespace ZargoEngine.Mathmatics
             value.Z = Clamp(value.Z, min, max);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Min(this ref Vector3 value, in float min)
         {
             value.X = MathF.Min(value.X, min);
@@ -84,7 +75,6 @@ namespace ZargoEngine.Mathmatics
             value.Z = MathF.Min(value.Z, min);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Max(this ref Vector3 value, in float min)
         {
             value.X = MathF.Max(value.X, min);
@@ -92,7 +82,6 @@ namespace ZargoEngine.Mathmatics
             value.Z = MathF.Max(value.Z, min);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Abs(this ref Vector3 value)
         {
             value.X = MathF.Abs(value.X);
@@ -100,7 +89,6 @@ namespace ZargoEngine.Mathmatics
             value.Z = MathF.Abs(value.Z);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 LerpUnclamped(in Vector3 a, in Vector3 b, in float t)
         {
             return new Vector3(
@@ -110,7 +98,6 @@ namespace ZargoEngine.Mathmatics
             );
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 MoveTowards(in Vector3 current, in Vector3 target, in float maxDistanceDelta)
         {
             // avoid vector ops because current scripting backends are terrible at inlining
@@ -129,10 +116,8 @@ namespace ZargoEngine.Mathmatics
                 current.Y + toVector_z / dist * maxDistanceDelta);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Distance(this Vector3 a, Vector3 b) => Distance(ref a, ref b);
         
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Distance(this ref Vector3 a, ref Vector3 b)
         {
             return Vector3.Distance(a, b);

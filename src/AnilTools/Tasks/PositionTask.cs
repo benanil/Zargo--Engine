@@ -6,9 +6,9 @@ namespace ZargoEngine.AnilTools
 {
     public class PositionTask : TransformTask
     {
-        private const float positionTolerance = Mathmatic.twoZeroOne;
+        private const float PositionTolerance = Mathmatic.twoZeroOne;
 
-        private Vector3 targetPosition;
+        private readonly Vector3 targetPosition;
 
         public override bool Proceed()
         {
@@ -20,7 +20,7 @@ namespace ZargoEngine.AnilTools
 
         public override bool IsFinished()
         {
-            if (from.Distance(targetPosition) < positionTolerance){
+            if (from.Distance(targetPosition) < PositionTolerance){
                 from.position = targetPosition;
                 return true;
             }

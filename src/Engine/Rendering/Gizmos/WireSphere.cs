@@ -64,7 +64,7 @@ namespace ZargoEngine
             // binds View matrix projection matrix and color to the shader
             GizmoShader.Use();
             GizmoShader.SetMatrix4("view", Camera.main.GetViewMatrix(), false);
-            GizmoShader.SetMatrix4("projection", Camera.main.GetGetProjectionMatrix(), false);
+            GizmoShader.SetMatrix4("projection", Camera.main.GetProjectionMatrix(), false);
             Shader.SetVector4Sys(GizmoShader.GetUniformLocation("color"), color);
 
             GizmoShader.SetMatrix4("model", ref GetModelMatrix(), true);

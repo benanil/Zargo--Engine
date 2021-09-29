@@ -15,7 +15,7 @@ namespace ZargoEngine.Editor.Attributes
         public new string format = "value: {0}";
         public ImGuiInputTextFlags flags = ImGuiInputTextFlags.None;
 
-        public override bool Proceed(FieldInfo field, object value, Component @object)
+        public override bool Proceed(FieldInfo field, object value, Companent @object)
         {
             switch (value)
             {

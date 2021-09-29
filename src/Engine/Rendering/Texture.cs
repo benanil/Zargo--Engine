@@ -20,37 +20,27 @@ namespace ZargoEngine.Rendering
 
         public Texture(string path, PixelFormat pixelFormat = PixelFormat.Rgba, bool createMipMap = true)
         {
-            var pixels = ImageLoader.Load(path, out width, out height,true,true);
+            var pixels = ImageLoader.Load(path, out width, out height, true, true);
+            // var mipmaps = ImageLoader.LoadWithMipMaps(path, out var widths, out var heights,true,true);
+            // width = widths[0]; height = heights[0];
             this.path = path;
 
             texID = GL.GenTexture();
 
             GL.BindTexture(TextureTarget.Texture2D, texID);
+            // GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBaseLevel, 0);
+            // GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, mipmaps.Length - 1);
             
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.SrgbAlpha, width, height,0, pixelFormat, PixelType.UnsignedByte, pixels);
-
-            if (createMipMap) {
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.NearestMipmapLinear);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-                GL.GenerateTextureMipmap(texID);
-            }
-            else {
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-            }
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.SrgbAlpha, width, height, 0, pixelFormat, PixelType.UnsignedByte, pixels);
+            
+            GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.LinearMipmapLinear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
 
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
 
             Debug.Log(GL.GetError());
-        }
-
-        public Texture(int width, int height){
-            texID = GL.GenTexture();
-            GL.BindTexture (TextureTarget.Texture2D, texID);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMinFilter.Linear);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, width, height, 0,PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
         }
 
         public void Bind(TextureUnit unit = TextureUnit.Texture0)
@@ -62,16 +52,31 @@ namespace ZargoEngine.Rendering
         /// <summary>this is for better texture quality and disabling mip mapping etc.</summary>
         public void SetAsUI()
         {
-            SetWrapS(TextureParameterName.ClampToEdge);
-            SetWrapT(TextureParameterName.ClampToEdge);
+            GL.BindTexture(TextureTarget.Texture2D, texID);
+            SetWrapS(TextureWrapMode.ClampToEdge);
+            SetWrapT(TextureWrapMode.ClampToEdge);
             SetMinFilter(TextureMinFilter.Linear);
+            GL.BindTexture(TextureTarget.Texture2D, 0);
         }
 
-        public static void UnBind()                       => GL.BindTexture(TextureTarget.Texture2D, 0);
-        public void SetMinFilter(TextureMinFilter filter) => GL.TextureParameter(texID, TextureParameterName.TextureMinFilter, (int)filter);
-        public void SetMagFilter(TextureMagFilter filter) => GL.TextureParameter(texID, TextureParameterName.TextureMagFilter, (int)filter);
-        public void SetWrapS(TextureParameterName filter) => GL.TextureParameter(texID, TextureParameterName.TextureWrapS, (int)filter);
-        public void SetWrapT(TextureParameterName filter) => GL.TextureParameter(texID, TextureParameterName.TextureWrapT, (int)filter);
+        public static void UnBind() 
+            => GL.BindTexture(TextureTarget.Texture2D, 0);
+        public void SetMinFilter(TextureMinFilter filter)
+        {
+            GL.BindTexture(TextureTarget.Texture2D, texID);
+            GL.TextureParameter(texID, TextureParameterName.TextureMinFilter, (int)filter);
+            GL.BindTexture(TextureTarget.Texture2D, 0);
+        }
+
+        public void SetMagFilter(TextureMagFilter filter)
+        {
+            GL.BindTexture(TextureTarget.Texture2D, texID);
+            GL.TextureParameter(texID, TextureParameterName.TextureMagFilter, (int)filter);
+            GL.BindTexture(TextureTarget.Texture2D, 0);
+        }
+
+        public void SetWrapS(TextureWrapMode filter) => GL.TextureParameter(texID, TextureParameterName.TextureWrapS, (int)filter);
+        public void SetWrapT(TextureWrapMode filter) => GL.TextureParameter(texID, TextureParameterName.TextureWrapT, (int)filter);
 
         public void SetAnisotropy(float level){
             const TextureParameterName TEXTURE_MAX_ANISOTROPY = (TextureParameterName)0x84FE;

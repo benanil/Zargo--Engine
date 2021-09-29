@@ -10,7 +10,7 @@ namespace ZargoEngine.Editor.Attributes
     /// <summary>it is only working for float values <summary/>
     public class SliderAttribute : GUIAttributeBase
     {
-        public override bool Proceed(FieldInfo field, object value, Component @object)
+        public override bool Proceed(FieldInfo field, object value, Companent @object)
         {
             switch (value)
             {

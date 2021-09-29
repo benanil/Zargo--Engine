@@ -15,19 +15,22 @@ namespace ZargoEngine
 {
     using Bmatrix = BulletSharp.Math.Matrix;
     
-    public unsafe class Transform : Component
+    public unsafe class Transform : Companent
     {
-        public Vector3 right   => Vector3.Transform(Vector3.UnitX, Quaternion.Conjugate(Translation.ExtractRotation()));
-        public Vector3 up      => Vector3.Transform(Vector3.UnitY, Quaternion.Conjugate(Translation.ExtractRotation()));
-        public Vector3 forward => Vector3.Transform(-Vector3.UnitZ, Quaternion.Conjugate(Translation.ExtractRotation()));
+        public Vector3 right   => Vector3.Transform(Vector3.UnitX, Quaternion.Conjugate(rotation));
+        public Vector3 up      => Vector3.Transform(Vector3.UnitY, Quaternion.Conjugate(rotation));
+        public Vector3 forward => Vector3.Transform(-Vector3.UnitZ, Quaternion.Conjugate(rotation));
 
         // comining
-        public Vector3 localPosition = Vector3.Zero;
+        public Vector3 localPosition
+        {
+            get => parent.position + position;
+            set => SetPosition(parent.position + value, true);
+        }
 
         public Vector3 position = Vector3.Zero;
 
-        // fpr serialization
-        public Vector3 _eulerAngles = Vector3.Zero;
+        private Vector3 _eulerAngles = Vector3.Zero;
 
         public Vector3 eulerAngles;
 
@@ -37,8 +40,25 @@ namespace ZargoEngine
 
         public Matrix4 Translation;
 
-        public Transform parent;
+        public Transform parent { get; set; }
+
         public List<Transform> childs = new List<Transform>();
+
+        public int ChildCount => childs.Count;
+
+        public Transform GetChild(int index) => childs[index];
+
+        public void AddChild(Transform child)
+        {
+            childs.Add(child);
+            child.SetPosition(position - child.position, true);
+            child.parent = this;
+        }
+
+        public void AddChild(GameObject go)
+        {
+            AddChild(go.transform);
+        }
 
         public ref Matrix4 GetTranslation()
         {
@@ -61,11 +81,20 @@ namespace ZargoEngine
 
         public override void DrawWindow()
         {
-            ImGui.TextColored(Color4.Orange.ToSystem(), name);
+            if (ImGui.CollapsingHeader(nameof(transform), ImGuiTreeNodeFlags.CollapsingHeader))
+            {
+                ImGui.TextColored(Color4.Orange.ToSystem(), name);
 
-            GUI.Vector3Field(ref position, "Position", () => SetPosition(position, true));
-            GUI.Vector3Field(ref scale, "Scale", () => SetScale(scale, true));
-            GUI.Vector3Field(ref _eulerAngles, "Euler Angles", () => SetEuler(_eulerAngles, true));
+                GUI.Vector3Field(ref position, "Position", () => SetPosition(position, true));
+                GUI.Vector3Field(ref scale, "Scale", () => SetScale(scale, true));
+                GUI.Vector3Field(ref _eulerAngles, "Euler Angles", () =>
+                {
+                    eulerAngles = _eulerAngles.V3DegreToRadian();
+                    rotation = Quaternion.FromEulerAngles(eulerAngles); 
+                    _eulerAngles = eulerAngles.V3RadianToDegree();
+                    UpdateTranslation();
+                }, speed: 1) ;
+            }
 
             ImGui.Separator();
         }
@@ -74,7 +103,7 @@ namespace ZargoEngine
         {
             SetPosition(position, false);
             SetScale(scale, false);
-            SetEuler(eulerAngles, true);
+            SetEulerDegree(eulerAngles, true);
 
             name = gameObject.name + "'s" + " Transform";
             new Line(position, position + up * 10);
@@ -85,27 +114,21 @@ namespace ZargoEngine
             if (notify) OnTransformChanged?.Invoke(ref Translation);
 
 
-            Translation = Matrix4.Identity * Matrix4.CreateFromQuaternion(rotation)*
+            Translation = Matrix4.CreateFromQuaternion(rotation)*
                           Matrix4.CreateScale(scale) *
                           Matrix4.CreateTranslation(position);
 
             if (parent != null) {
-                Translation += parent.Translation;
+                Translation *= parent.Translation;
             }
 
             for (short i = 0; i < childs.Count; i++)
             {
                 childs[i].UpdateTranslation();
             }
-
-            // when object moves wee need to calculate shadow
-            // avoiding calculation of every children
-            if (childs.Count == 0 || parent == null) {
-                Renderer3D.UpdateShadows();
-            }
         }
 
-        public void SetEuler(in Vector3 value, bool notify)
+        public void SetEulerDegree(in Vector3 value, bool notify)
         {
             _eulerAngles = value; // this because _eulerangles must be non zero
             eulerAngles = value.V3DegreToRadian();
@@ -177,9 +200,9 @@ namespace ZargoEngine
         public event ScaleChangedEvent OnScaleChanged;
 
         // shortcuts: instead of transform.gameobject.something transform.something
-        public T AddComponent<T>(T component) where T : Component => gameObject.AddComponent(component);
-        public T GetComponent<T>() where T : Component => gameObject.GetComponent<T>();
-        public bool TryGetComponent<T>(out T value) where T : Component => gameObject.TryGetComponent(out value);
+        public T AddComponent<T>(T component) where T : Companent => gameObject.AddComponent(component);
+        public T GetComponent<T>() where T : Companent => gameObject.GetComponent<T>();
+        public bool TryGetComponent<T>(out T value) where T : Companent => gameObject.TryGetComponent(out value);
         public bool HasComponent<T>() => gameObject.HasComponent<T>();
     }
 }

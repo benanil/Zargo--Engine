@@ -1,13 +1,22 @@
 ﻿
+using ImGuiNET;
+using System;
 using ZargoEngine.Helper;
 using ZargoEngine.Physics;
 using ZargoEngine.Rendering;
 using ZargoEngine.UI;
 
+#nullable disable warnings
 namespace ZargoEngine.Editor
 {
-    public sealed class Inspector : EditorWindow
+    public sealed class Inspector :  IDrawable
     {
+        private static bool Hovered;
+        private static bool Focused;
+
+        private bool windowActive = false;
+        public string title = "Editor Window";
+
         public static IDrawable currentObject;
         public static Inspector instance;
 
@@ -16,6 +25,7 @@ namespace ZargoEngine.Editor
             instance = this;
             title = "Inspector";
         }
+
 
         readonly TitleAndAction[] inspectorRightClicks =
         {
@@ -64,32 +74,55 @@ namespace ZargoEngine.Editor
             }),
         };
 
-        protected override void OnGUI()
+        public void DrawWindow()
         {
-            GUI.RightClickPopUp("inspector-rightclick", inspectorRightClicks);
-            
-            currentObject?.DrawWindow();
+            if (ImGui.Begin(title, ref windowActive, ImGuiWindowFlags.None))
+            {
+                Hovered = ImGui.IsWindowHovered();
+                Focused = ImGui.IsWindowFocused();
+
+                GUI.RightClickPopUp("inspector-rightclick", inspectorRightClicks);
+         
+                currentObject?.DrawWindow();
+            }
+            ImGui.End();
+        }
+
+        internal static void TryDelete()
+        {
+            if (Focused)
+            {
+                currentObject?.Dispose();
+            }
         }
 
         internal static void Duplicate()
         {
             if (currentObject is GameObject old)
             {
-                var go = new GameObject(old.name + "1");
-                go.transform.SetMatrix(Extensions.TRS(old.transform));
+                var newGo = new GameObject(old.name + "1");
+                newGo.transform.SetMatrix(Extensions.TRS(old.transform));
 
-                if (go.TryGetComponent(out MeshRenderer oldRenderer))
+                if (old.TryGetComponent(out MeshRenderer oldRenderer))
                 {
-                    go.AddComponent(new MeshRenderer((Mesh)oldRenderer.mesh, oldRenderer.gameObject, AssetManager.DefaultMaterial));
+                    new MeshRenderer(oldRenderer.mesh, newGo, AssetManager.DefaultMaterial);
+                }
+                if (newGo.TryGetComponent(out BepuCollider oldCollider))
+                {
+                    var collider = new BepuCollider(newGo, oldCollider.mass, oldCollider.mobility);
+                    collider.UpdatePhysics = false; // for possible bugs
                 }
 
-                if (go.TryGetComponent(out BepuCollider oldCollider))
+                for (int i = 0; i < old.components.Count; i++)
                 {
-                    var collider = new BepuCollider(go, oldCollider.mass, oldCollider.mobility);
-                    collider.UpdatePhysics = false; // for possible bugs
-                    go.AddComponent(collider);
+                    if (old.components[i] is not (MeshRenderer or BepuCollider))
+                    {
+                        Activator.CreateInstance(old.components[i].GetType(), newGo);
+                    }
                 }
             }
         }
+
+        public void Dispose() {}
     }
 }

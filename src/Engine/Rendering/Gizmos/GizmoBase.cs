@@ -21,7 +21,7 @@ namespace ZargoEngine.Rendering
         public virtual void Render()
         {
             GizmoShader.Use();
-            GizmoShader.SetMatrix4Location(GizmoShader.viewProjectionLoc, Camera.main.GetViewMatrix() * Camera.main.GetGetProjectionMatrix(), true);
+            GizmoShader.SetMatrix4Location(GizmoShader.viewProjectionLoc, Camera.main.GetViewMatrix() * Camera.main.GetProjectionMatrix(), true);
             Shader.SetVector4Sys(GizmoShader.GetUniformLocation("color"), color);
         }
 

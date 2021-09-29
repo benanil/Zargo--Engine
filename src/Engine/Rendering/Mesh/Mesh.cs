@@ -2,22 +2,46 @@
 using OpenTK.Graphics.OpenGL4;
 using System;
 using OpenTK.Mathematics;
+using Assimp;
 
 #nullable disable warnings
 
 namespace ZargoEngine.Rendering
 {
+    using AIMesh = Assimp.Mesh;
+
     public class Mesh : MeshBase
     {
-        public unsafe Mesh(string path) : base(path)
+        public Mesh(string path) : base(path) { }
+
+        public Mesh(string path, AIMesh mesh) : base(path)
         {
-            AssimpImporter.LoadMesh(path, out Positions, out TexCoords, out Normals, out indices);
-                 
+            name = mesh.Name;
+
+            Positions = new Vector3D[mesh.Vertices.Count];
+            Normals = new Vector3D[mesh.Vertices.Count];
+            TexCoords = new Vector2D[mesh.TextureCoordinateChannels[0].Count];
+            
+            mesh.Vertices.CopyTo(Positions);
+            indices = mesh.GetIndices();
+            
+            if (mesh.HasNormals) mesh.Normals.CopyTo(Normals);
+            
+            if (mesh.HasTextureCoords(0))
+            {
+                for (int i = 0; i < mesh.TextureCoordinateChannels[0].Count; i++)
+                {
+                    TexCoords[i] = new Vector2D(mesh.TextureCoordinateChannels[0][i].X,
+                                                mesh.TextureCoordinateChannels[0][i].Y);
+                }
+            }
             LoadBuffers();
         }
 
-        public override void LoadBuffers()
+        public sealed override void LoadBuffers()
         {
+            GenerateBoundingBox();
+
             vaoID = GL.GenVertexArray();
             GL.BindVertexArray(vaoID);
 

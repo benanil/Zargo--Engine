@@ -2,104 +2,114 @@
 using OpenTK.Mathematics;
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Xml.Serialization;
 using ZargoEngine.Rendering;
 
+#nullable disable warnings
 namespace ZargoEngine.SaveLoad
 {
-    [XmlRoot("SceneSaveData")]
     [Serializable]
     public class SceneSaveData
     {
-        public List<SavedGameObject> savedGameObjects = new List<SavedGameObject>();
-        public CameraProperties cameraProperties = new CameraProperties();
+        public string Name;
+        public Vector3 cameraPos;
+        public Vector3 cameraUp;
+        public Vector3 cameraForward;
+        public RenderSaveData RenderSaveData;
+        public GameObjectSaveData[] savedGOs;
 
-        public SceneSaveData(List<GameObject> gameObjects, Camera camera)
+        public SceneSaveData() {}
+
+        public SceneSaveData(string sceneName, List<GameObject> gameObjects)
         {
-            cameraProperties.cameraPos = camera.Position;
-            cameraProperties.camUp = camera.Up; cameraProperties.camFront = camera.Front; cameraProperties.camRight = camera.Right; 
+            Name = sceneName;
+            cameraPos = Camera.SceneCamera.Position;
+            cameraUp = Camera.SceneCamera.Up;
+            cameraForward = Camera.SceneCamera.Front;
+            RenderSaveData = RenderSaveData.TakeFromCurrent();
+            savedGOs = new GameObjectSaveData[gameObjects.Count];
 
-            for (int i = 0; i < gameObjects.Count; i++)
+            for (int i = 0; i < savedGOs.Length; i++)
             {
-                savedGameObjects.Add(new SavedGameObject(gameObjects[i]));
+                savedGOs[i] = new GameObjectSaveData(gameObjects[i]);
             }
         }
-
-        internal SceneSaveData() {}
     }
 
-    [XmlRoot("SavedGameObject")]
     [Serializable]
-    public class SavedGameObject 
+    public class GameObjectSaveData
     {
         public string name;
-        public Vector3 position = Vector3.Zero;
-        public Vector3 scale = Vector3.Zero;
-        public Vector3 euler = Vector3.Zero;
-        public MeshFileInfo meshFileInfo;
+        public Matrix4 translation;
+        public CompanentData[] companentDatas;
 
-        public GameObject Load()
+        public GameObjectSaveData()  {}
+
+        public GameObject Generate()
         {
-            var go = new GameObject(name);
-            
-            meshFileInfo?.Generate(go);
+            GameObject go = new GameObject(name);
 
-            go.transform.SetScale(scale, false);
-            go.transform.SetPosition(position, false);
-            go.transform.SetEuler(euler, true);
+            go.transform.position = translation.ExtractTranslation();
+            go.transform.rotation = translation.ExtractRotation();
+            go.transform.scale = translation.ExtractScale();
+            go.transform.UpdateTranslation();
+
+            for (int i = 0; i < companentDatas.Length; i++)
+            {
+                CompanentData data = companentDatas[i];
+                Type type = Type.GetType(data.AssemblyQualifiedName);
+
+                if (type == typeof(Transform)) continue;
+                if (type == typeof(MeshRenderer))
+                {
+                    string meshPath = MeshCreator.CreateCube().path;
+                    string materialPath = AssetManager.DefaultMaterial.path;
+
+                    for (int j = 0; j < data.fieldDatas.Length; j++)
+                    {
+                        Debug.LogWarning("field name: " + data.fieldDatas[j].fieldName);
+
+                        if (data.fieldDatas[j].fieldName == "MaterialPath")
+                        {
+                            materialPath = data.fieldDatas[j].value;
+                        }
+                        if (data.fieldDatas[j].fieldName == "MeshPath")
+                        {
+                            meshPath = data.fieldDatas[j].value;
+                        }
+                    }
+
+                    new MeshRenderer(AssetManager.GetMesh(meshPath), go, AssetManager.GetMaterial(materialPath));
+                    continue;
+                }
+
+                Companent companent = (Companent)Activator.CreateInstance(type, go);
+                companent.InitializeFields(data.fieldDatas);
+            }
+
             return go;
         }
 
-        internal SavedGameObject() {}
-
-        public unsafe SavedGameObject(GameObject go)
+        public GameObjectSaveData(GameObject go)
         {
-            name     = Unsafe.AsRef(go.name);
-            position = Unsafe.AsRef(go.transform.position);
-            euler    = Unsafe.AsRef(go.transform._eulerAngles); // we are getting _euler instead of euler cause _euler returning degrees
-            scale    = Unsafe.AsRef(go.transform.scale);
+            name = go.name ?? "go";
+            translation = go.transform.Translation;
+            companentDatas = new CompanentData[go.components.Count];
 
-            meshFileInfo = new MeshFileInfo();
-            if (go.TryGetComponent(out MeshRenderer meshRenderer))
+            for (int i = 0; i < companentDatas.Length; i++)
             {
-                meshFileInfo.initialize(meshRenderer);
+                if (go.components[i] is MeshRenderer meshRenderer) {
+                    meshRenderer.MaterialPath = meshRenderer.Material.path;
+                    meshRenderer.MeshPath = meshRenderer.mesh.GetIdentifier();
+                }
+                companentDatas[i] = new CompanentData(go.components[i]);
             }
         }
-    }
 
-    [Serializable]
-    public class CameraProperties
-    {
-        public Vector3 cameraPos;
-        public Vector3 camFront;
-        public Vector3 camUp;
-        public Vector3 camRight;
-
-        internal CameraProperties() {}
-    }
-
-    [Serializable]
-    public class MeshFileInfo
-    {
-        public string meshPath = string.Empty;
-        public string materialPath = string.Empty;
-
-        internal MeshFileInfo() { }
-
-        public void initialize(MeshRenderer meshRenderer)
-        { 
-            meshPath = meshRenderer.mesh.path;
-            materialPath = meshRenderer.Material.path;
-        }
-
-        public void Generate(GameObject gameObject)
+        public GameObjectSaveData(string name, Matrix4 translation, CompanentData[] companentDatas)
         {
-            if (meshPath == string.Empty) return;
-            Mesh mesh     = AssetManager.GetMeshFullPath<Mesh>(meshPath);
-            Material material = AssetManager.GetMaterial(materialPath);
-            new MeshRenderer(mesh, gameObject, material);
+            this.name = name;
+            this.translation = translation;
+            this.companentDatas = companentDatas;
         }
     }
-
 }

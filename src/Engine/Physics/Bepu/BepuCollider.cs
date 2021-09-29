@@ -15,10 +15,10 @@ namespace ZargoEngine.Physics
     using TKQuat  = OpenTK.Mathematics.Quaternion; 
     using BepuMesh = BepuPhysics.Collidables.Mesh;
     
-    public unsafe class BepuCollider : Component
+    public unsafe class BepuCollider : Companent
     {
         private MeshRenderer meshRenderer;
-        public IShape? shape;
+        public IShape shape;
         public TypedIndex ShapeIndex;
         public BodyHandle handle;
         public StaticHandle staticHandle;

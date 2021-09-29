@@ -18,7 +18,7 @@ namespace ZargoEngine.Physics
     using Bmatrix = BulletSharp.Math.Matrix;
     
     // todo add gizmos for collisions
-    public unsafe class BulletCollider : Component
+    public unsafe class BulletCollider : Companent
     {
         private MeshRenderer meshRenderer;
 

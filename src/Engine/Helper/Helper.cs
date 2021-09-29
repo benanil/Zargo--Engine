@@ -1,5 +1,6 @@
 ﻿
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace ZargoEngine.Helper
 {
@@ -9,6 +10,7 @@ namespace ZargoEngine.Helper
         {
             System.Diagnostics.Process.Start("explorer.exe", path);
         }
+
         // for dictionaries
         public static void AddOrCreate<Key, Value>(this Dictionary<Key, Value> dictionary, Key key, Value value)
         {

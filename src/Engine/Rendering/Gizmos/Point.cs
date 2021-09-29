@@ -61,7 +61,7 @@ namespace ZargoEngine.Rendering
         {
             // binds View matrix projection matrix and color to the shader
             PointShader.Use();
-            PointShader.SetMatrix4Location(PointShader.viewProjectionLoc, Camera.main.GetViewMatrix() * Camera.main.GetGetProjectionMatrix(), true);
+            PointShader.SetMatrix4Location(PointShader.viewProjectionLoc, Camera.main.GetViewMatrix() * Camera.main.GetProjectionMatrix(), true);
 
             Shader.SetVector4Sys(PointShader.GetUniformLocation("color"), color);
             PointShader.SetMatrix4("model", Matrix4.CreateTranslation(position), true);

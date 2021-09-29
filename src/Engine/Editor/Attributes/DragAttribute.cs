@@ -11,7 +11,7 @@ namespace ZargoEngine.Editor.Attributes
     public class DragAttribute : GUIAttributeBase
     {
         /// <returns>continue</returns>
-        public override bool Proceed(FieldInfo field, object value, Component @object)
+        public override bool Proceed(FieldInfo field, object value, Companent @object)
         {
             switch (value)
             {

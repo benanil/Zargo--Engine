@@ -15,7 +15,7 @@ namespace ZargoEngine.Rendering
         public static Mesh CreateCube()
         {
             if (instance.cube == null){
-                instance.cube = AssetManager.GetMesh("Models/objs/cube.obj");
+                instance.cube = AssetManager.GetMesh("Models/objs/cube.obj", "cube");
             }
             return instance.cube;
         }
@@ -38,55 +38,11 @@ namespace ZargoEngine.Rendering
         public static Mesh CreateQuad()
         {
             if (instance.quad == null){
-                instance.quad = AssetManager.GetMesh("Models/objs/Atilla.obj");
+                instance.quad = CreateCube();//;AssetManager.GetMesh("Models/objs/Atilla.obj");
             }
 
             return instance.quad;
         }
 
-        // cpu efficent way
-        private static readonly float[] cubeVertices = {
-            -1.0f,  1.0f, -1.0f,
-            -1.0f, -1.0f, -1.0f,
-             1.0f, -1.0f, -1.0f,
-             1.0f, -1.0f, -1.0f,
-             1.0f,  1.0f, -1.0f,
-            -1.0f,  1.0f, -1.0f,
-
-            -1.0f, -1.0f,  1.0f,
-            -1.0f, -1.0f, -1.0f,
-            -1.0f,  1.0f, -1.0f,
-            -1.0f,  1.0f, -1.0f,
-            -1.0f,  1.0f,  1.0f,
-            -1.0f, -1.0f,  1.0f,
-
-             1.0f, -1.0f, -1.0f,
-             1.0f, -1.0f,  1.0f,
-             1.0f,  1.0f,  1.0f,
-             1.0f,  1.0f,  1.0f,
-             1.0f,  1.0f, -1.0f,
-             1.0f, -1.0f, -1.0f,
-
-            -1.0f, -1.0f,  1.0f,
-            -1.0f,  1.0f,  1.0f,
-             1.0f,  1.0f,  1.0f,
-             1.0f,  1.0f,  1.0f,
-             1.0f, -1.0f,  1.0f,
-            -1.0f, -1.0f,  1.0f,
-
-            -1.0f,  1.0f, -1.0f,
-             1.0f,  1.0f, -1.0f,
-             1.0f,  1.0f,  1.0f,
-             1.0f,  1.0f,  1.0f,
-            -1.0f,  1.0f,  1.0f,
-            -1.0f,  1.0f, -1.0f,
-
-            -1.0f, -1.0f, -1.0f,
-            -1.0f, -1.0f,  1.0f,
-             1.0f, -1.0f, -1.0f,
-             1.0f, -1.0f, -1.0f,
-            -1.0f, -1.0f,  1.0f,
-             1.0f, -1.0f,  1.0f
-        };       
     }
 }

@@ -17,7 +17,7 @@ namespace ZargoEngine.Editor
             {
                 if (x.transform.parent == null)
                 {
-                    DrawEntity(x);
+                    DrawEntityRec(x);
                 }
             });
 
@@ -31,13 +31,13 @@ namespace ZargoEngine.Editor
                 {
                     var go = new GameObject("Cube");
                     new MeshRenderer(MeshCreator.CreateCube(), go, AssetManager.DefaultMaterial);
-                    go.transform.SetPosition(Camera.main.Position + (Camera.main.Front * 2), true);
+                    go.transform.SetPosition(Camera.SceneCamera.Position + (Camera.SceneCamera.Front * 2), true);
                 }
                 if (ImGui.MenuItem("Create Sphere"))
                 {
                     var go = new GameObject("Sphere");
                     new MeshRenderer(MeshCreator.CreateSphere(), go, AssetManager.DefaultMaterial);
-                    go.transform.SetPosition(Camera.main.Position + (Camera.main.Front * 2), true);
+                    go.transform.SetPosition(Camera.SceneCamera.Position + (Camera.SceneCamera.Front * 2), true);
                 }
                 ImGui.EndPopup();
             }
@@ -53,13 +53,20 @@ namespace ZargoEngine.Editor
 
         GameObject deletedObject;
 
-        private void DrawEntity(GameObject entity)
+        private void DrawEntityRec(GameObject entity)
         {
             var flags = (Inspector.currentObject != entity) ? ImGuiTreeNodeFlags.OpenOnArrow : 0 | ImGuiTreeNodeFlags.Selected;
-            
-            if (ImGui.TreeNodeEx(entity.name, flags))
+
+            if (entity.name != null && ImGui.TreeNodeEx(entity.name ?? string.Empty, flags))
             {
-                // todo make tree great again!
+                // todo add drag and drop
+                ImGui.TreeNodeEx(entity.name ?? string.Empty);
+
+                for (int i = 0; i < entity.transform.ChildCount; i++)
+                {
+                    DrawEntityRec(entity.transform.GetChild(i).gameObject);
+                }
+                
                 ImGui.TreePop();
             }
 
@@ -77,7 +84,7 @@ namespace ZargoEngine.Editor
                     ImGui.EndPopup();
                 }
             }
-           // slowDebugger.LogSlow("drawing entity: " + entity.name);
+
         }
     }
 }

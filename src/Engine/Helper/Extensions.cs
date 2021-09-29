@@ -24,9 +24,9 @@ namespace ZargoEngine.Helper
 
         public static void Foreach<T>(this T[] array,Action<T> action)
         {
-            for (int i = 0; i < array.Length; i++)
+            foreach (var t in array)
             {
-                action.Invoke(array[i]);
+                action.Invoke(t);
             }
         }
 
@@ -64,17 +64,13 @@ namespace ZargoEngine.Helper
 
         public static Vector3 ReplaceXY(this Vector3 vector)
         {
-            float xOld = vector.X;
-            vector.X = vector.Y;
-            vector.Y = xOld;
+            (vector.X, vector.Y) = (vector.Y, vector.X);
             return vector;
         }
 
         public static Vector3 ReplaceYZ(this Vector3 vector)
         {
-            float zOld = vector.Z;
-            vector.Z = vector.Y;
-            vector.Y = zOld;
+            (vector.Z, vector.Y) = (vector.Y, vector.Z);
             return vector;
         }
 

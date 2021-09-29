@@ -1,0 +1,3 @@
+Lit
+..\..\..\Assets\Shaders\Basic.vert
+..\..\..\Assets\Shaders\litShader.frag

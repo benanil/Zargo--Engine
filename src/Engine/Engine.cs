@@ -6,7 +6,6 @@
 #nullable disable warnings
 
 // OpenTK
-using OpenTK.Windowing.GraphicsLibraryFramework;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
@@ -15,38 +14,41 @@ using OpenTK.Windowing.Desktop;
 using Coroutine;
 using Dear_ImGui_Sample;
 using System;
+using ImGuiNET;
+using System.Windows.Forms;
+using ZargoEngine.AnilTools;
 
 namespace ZargoEngine
 {
     // Zargo
-    using ZargoEngine.Rendering;
-    using ZargoEngine.Editor;
-    using ZargoEngine.Analysis;
-    using ZargoEngine.Helper;
-    using ZargoEngine.AnilTools;
+    using Rendering;
+    using Editor;
+    using Analysis;
     using ZargoEngine.Media.Sound;
-    using ZargoEngine.Physics;
+    using Physics;
     using Shader  = Rendering.Shader;
     using Texture = Rendering.Texture;
-    using static System.Windows.Forms.SystemInformation;
+    using static SystemInformation;
+    using System.Collections.Generic;
+    using System.IO;
+    using Keys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
 
     public class Engine : GameWindow
     {
-        public static Engine instance;
         public static bool IsEditor;
-        private static EditorWindow[] editorWindows;
-        private ImGuiController _Imguicontroller;
-        private Camera camera;
+        private static List<IDrawable> editorWindows;
+        public static void AddWindow(IDrawable drawable) => editorWindows.Add(drawable);
+        public static void RemoveWindow(IDrawable drawable) => editorWindows.Remove(drawable);
 
-        private RenderHandeller renderHandeller;
-        private GameViewWindow GameViewWindow;
+        private ImGuiController _Imguicontroller;
+
+        private RenderConfig renderHandeller;
+        private SceneViewWindow GameViewWindow;
         private Skybox skybox;
-        public GameObject firstObject;
 
         // rendering
         public FrameBuffer SceneFrameBuffer;
-        public FrameBuffer ScreenFrameBuffer;
-
+        public FrameBuffer ScreenFrameBuffer;// for sceneWiew
         private Shader PostProcessingShader;
 
         public Action<ResizeEventArgs> OnWindowScaleChanged = (scale) => { };
@@ -83,8 +85,6 @@ namespace ZargoEngine
 
         private void LoadScene()
         {
-            instance = this;
-
             AssetManager.LoadDefaults();
 
             PostProcessingShader = AssetManager.GetShader("Shaders/PostProcessing.vert", "Shaders/PostProcessing.glsl");
@@ -112,14 +112,14 @@ namespace ZargoEngine
             new AudioContext();
 
             skybox = new Skybox();
-            camera = new Camera(new Vector3(0, 0, 1), ClientRectangle.Size.X / ClientRectangle.Size.Y, -Vector3.UnitZ);
+            new Camera(new Vector3(0, 0, 1), ClientRectangle.Size.X / ClientRectangle.Size.Y, -Vector3.UnitZ);
+            renderHandeller = new RenderConfig();
 
-            renderHandeller = new RenderHandeller(camera);
-
-            var scene = new Scene(renderHandeller, "first scene");  
-
-            SceneManager.AddScene(scene);
-            SceneManager.LoadScene(0);
+            if (!IsEditor)
+            {
+                // todo: load last scene player played
+                SceneManager.LoadScene(0);
+            }
 
             // for now we are testing animation stuff
             // GameObject atillaGO    = new GameObject("Animated tnim matrix");
@@ -133,7 +133,7 @@ namespace ZargoEngine
 
         private unsafe void LoadGUI()
         {
-            editorWindows = new EditorWindow[]
+            editorWindows = new List<IDrawable>
             {
                 new Inspector(),
                 new Hierarchy(),
@@ -143,14 +143,13 @@ namespace ZargoEngine
             };
             
             _Imguicontroller    = new ImGuiController(ClientSize.X, ClientSize.Y);
-            GameViewWindow = new GameViewWindow(this);
+            GameViewWindow = new SceneViewWindow(this);
             
-            SceneFrameBuffer  = new FrameBuffer(PrimaryMonitorMaximizedWindowSize.Width, PrimaryMonitorMaximizedWindowSize.Height, PixelInternalFormat.Rgba16f);
-            ScreenFrameBuffer = new FrameBuffer(PrimaryMonitorMaximizedWindowSize.Width, PrimaryMonitorMaximizedWindowSize.Height);
+            SceneFrameBuffer  = new FrameBuffer(PrimaryMonitorMaximizedWindowSize.Width, PrimaryMonitorMaximizedWindowSize.Height, PixelInternalFormat.Rgb);
+            ScreenFrameBuffer = new FrameBuffer(PrimaryMonitorMaximizedWindowSize.Width, PrimaryMonitorMaximizedWindowSize.Height, PixelInternalFormat.Rgb);
 
             EditorWindowSaving.Load();
         }
-
 
         protected override void OnTextInput(TextInputEventArgs e)
         {
@@ -172,21 +171,23 @@ namespace ZargoEngine
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
             GL.Disable(EnableCap.DepthTest);
         }
+        
+        string sceneName = string.Empty;
 
         protected override void OnRenderFrame(FrameEventArgs args)
         {
             // actually we are requesting shadow calculation we are not calculating
-            Renderer3D.CalculateShadows();
+            Shadow.CalculateShadows();
 
             // first pass render whole scene
             SceneFrameBuffer.Bind();
             {
                 PrepareRenderingScene();
 
-                skybox.Use(camera);
+                skybox.Use(Camera.main);
                 GL.Enable(EnableCap.DepthTest);
 
-                Renderer3D.RenderMaterials(renderHandeller);
+                Renderer3D.RenderMaterials(Camera.main);
                 SceneManager.currentScene?.Render();
                 Gizmos.Render();
                 OnHud.Invoke();
@@ -203,9 +204,9 @@ namespace ZargoEngine
                     GL.BindVertexArray(screenVao);
                     GL.EnableVertexAttribArray(0);
 
-                    GL.Uniform1(1, renderHandeller.gamma);
-                    GL.Uniform1(2, renderHandeller.saturation);
-                    GL.Uniform1(3, (int)renderHandeller.tonemappingMode);
+                    GL.Uniform1(1, RenderConfig.gamma);
+                    GL.Uniform1(2, RenderConfig.saturation);
+                    GL.Uniform1(3, (int)RenderConfig.tonemappingMode);
                     
                     GL.ActiveTexture(TextureUnit.Texture0);
                     GL.BindTexture(TextureTarget.Texture2D, SceneFrameBuffer.texID);
@@ -227,8 +228,60 @@ namespace ZargoEngine
             // frame buffer changes the Viewport size(smaller value) we need to fix it back
             GL.Viewport(0, 0, ClientRectangle.Size.X, ClientRectangle.Size.Y);
 
-            _Imguicontroller.GenerateDockspace(EditorWindow);
+
+            if (SceneManager.currentScene != null)
+            {
+                _Imguicontroller.GenerateDockspace(EditorWindow);
+            }
+            else if (IsEditor)
+            {
+                ImGui.Begin("Welcome");
+
+                if (!Directory.Exists(AssetManager.AssetsPath + "Scenes")) Directory.CreateDirectory(AssetManager.AssetsPath + "Scenes");
+                string[] scenes = Directory.GetFiles(AssetManager.AssetsPath + "Scenes");
+                
+                for (ushort i = 0; i < scenes.Length; i++)
+                {
+                    if (ImGui.Button(Path.GetFileNameWithoutExtension(scenes[i])))
+                    {
+                        SceneManager.LoadScene(scenes[i]);
+                        AssimpImporter.ImportAssimpScene(AssetManager.AssetsPath + "Models/sponza.obj");
+                    }
+                    ImGui.SameLine();
+                    ImGui.PushStyleColor(ImGuiCol.Button, new System.Numerics.Vector4(1, 0, 0, 1));
+                    if (ImGui.Button("X"))
+                    {
+                        if (MessageBox.Show("are you sure to delete it ?", "Warning", MessageBoxButtons.OKCancel) == DialogResult.OK)
+                        {
+                            File.Delete(scenes[i]);
+                        }
+                    }
+                    ImGui.PopStyleColor();
+                }
+
+                GUI.TextField(ref sceneName, "SceneName");
+                ImGui.SameLine();
+            
+                if (ImGui.Button("Create New Scene"))
+                {
+                    new Scene(RenderSaveData.Default, sceneName);// this line also adds scene to scene manager
+                }
+            
+                ImGui.Separator();
+            
+                ImGui.Text("       welcome to Zargo Engine!                  \n" +
+                           "f5- Start Scene & stop scene                     \n" +
+                           "right click material and scene for open          \n" +
+                           "drag and drop models to the scene for render them\n" +
+                           "drag drop models to the engine for adding them       ");
+                
+                ImGui.End();
+            }
+
             _Imguicontroller.Render();
+
+            ImGui.UpdatePlatformWindows();
+            ImGui.RenderPlatformWindowsDefault();
 
             GL.Enable(EnableCap.DepthTest);
 
@@ -243,7 +296,10 @@ namespace ZargoEngine
         {
             GameViewWindow.Render();
             renderHandeller.DrawWindow();
-            editorWindows.Foreach(x => x.DrawWindow());
+            foreach (var window in editorWindows)
+            {
+                window.DrawWindow();
+            }
         }
 
         protected override void OnUpdateFrame(FrameEventArgs args)
@@ -260,13 +316,13 @@ namespace ZargoEngine
             if (oldPosition != Bounds.Min) OnWindowPositionChanged(Bounds);
             oldPosition = Bounds.Min;
 
-            SceneManager.currentScene.Update();
+            SceneManager.currentScene?.Update();
             MainInput();
         }
 
         private Vector2i oldPosition;
 
-        public static event PositionChanged OnWindowPositionChanged = delegate(in Box2i position) { };
+        public static event PositionChanged OnWindowPositionChanged = delegate { };
         public delegate void PositionChanged(in Box2i position);
 
         protected override void OnMouseWheel(MouseWheelEventArgs e)
@@ -280,7 +336,7 @@ namespace ZargoEngine
         protected override void OnResize(ResizeEventArgs e)
         {
             if (ClientRectangle.Size.X > 0 && ClientRectangle.Size.Y > 0) {
-                camera.AspectRatio = AspectRatio;
+                Camera.SceneCamera.AspectRatio = AspectRatio;
             }
             GL.Viewport(0, 0, e.Width, e.Height);
             OnWindowScaleChanged(e);
@@ -290,10 +346,21 @@ namespace ZargoEngine
 
         private unsafe void MainInput()
         {
-            if (IsKeyReleased(Keys.Enter) || IsKeyReleased(Keys.KeyPadEnter)) LogGame();
             if (IsKeyPressed(Keys.F11)) Screen.FullScreen = !Screen.FullScreen; // full screen    
-            if (IsKeyDown(Keys.LeftControl) && IsKeyPressed(Keys.G))
-            {
+
+            if (!IsEditor) return;
+
+            if (IsKeyDown(Keys.LeftControl) && IsKeyPressed(Keys.Z)) {
+                Undo.undo();
+            }
+
+            if (IsKeyDown(Keys.LeftControl) && IsKeyPressed(Keys.Y)) {
+                Undo.Redo();
+            }
+
+            if (IsKeyDown(Keys.Delete)) { Inspector.TryDelete(); }
+            if (IsKeyReleased(Keys.Enter) || IsKeyReleased(Keys.KeyPadEnter)) LogGame();
+            if (IsKeyDown(Keys.LeftControl) && IsKeyPressed(Keys.G)) {
                 Console.Clear();
             }
         }
@@ -304,10 +371,15 @@ namespace ZargoEngine
         }
 
         public static void LogGame() {
-            Renderer3D.DebugMatrix();
             GC.Collect();
         }
 
+
+        protected override void OnFocusedChanged(FocusedChangedEventArgs e)
+        {
+            base.OnFocusedChanged(e);
+            Debug.LogWarning("Focus Changed");
+        }
         protected override void OnFileDrop(FileDropEventArgs e) {
             for (ushort i = 0; i < e.FileNames.Length; i++) 
             {
@@ -318,11 +390,11 @@ namespace ZargoEngine
 
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
         {
-            var result = System.Windows.Forms.MessageBox.Show("do you want to close, wana save?", "Warning", System.Windows.Forms.MessageBoxButtons.YesNoCancel);
-            if (result == System.Windows.Forms.DialogResult.Cancel) {
+            var result = MessageBox.Show("do you want to close, wana save?", "Warning", MessageBoxButtons.YesNoCancel);
+            if (result == DialogResult.Cancel) {
                 e.Cancel = true;
             }
-            else if (result == System.Windows.Forms.DialogResult.Yes){
+            else if (result == DialogResult.Yes){
                 SceneManager.currentScene.SaveScene();
             }
 

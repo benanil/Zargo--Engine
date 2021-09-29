@@ -15,5 +15,5 @@ vec2 ScreenPointToNDC(in vec2 vertexPos) // to normalize device coordinates
 void main(void) 
 {
 	pTexCoords = aVertex.zw;
-	gl_Position = vec4(ScreenPointToNDC(aVertex.xy), 0 , 1);
+    gl_Position = vec4(ScreenPointToNDC(aVertex.xy), 0 , 1);
 }

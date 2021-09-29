@@ -25,7 +25,7 @@ namespace ZargoEngine.Editor.Attributes
         }
 
         /// <returns>continue</returns>
-        public virtual bool Proceed(FieldInfo field, object value, Component @object) 
+        public virtual bool Proceed(FieldInfo field, object value, Companent @object) 
         {
             return false;
         }

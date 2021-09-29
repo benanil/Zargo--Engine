@@ -33,14 +33,14 @@ namespace ZargoEngine
             
             if (extension == obj || extension == fbx)
             {
-                var go = UseMesh(path);
+                var go = AssimpImporter.ImportAssimpScene(path);
 
                 Inspector.currentObject = go;
 
                 // import edilen objeyi assets pathina kopyalar
                 File.Copy(path, newFile, true);
                 // yeni yaratılan objeyi sahne kamerasının 1 mt önüne spawnlar
-                go.transform.position = Camera.main.Position + Camera.main.Front;
+                go.transform.position = Camera.SceneCamera.Position + Camera.SceneCamera.Front;
             }
             else if (extension == jpg || extension == png || extension == tga || extension == ".PNG")
             {
@@ -61,19 +61,11 @@ namespace ZargoEngine
 
             if (extension.Contains(obj, fbx, dae, blend))
             {
-                var go = UseMesh(path);
+                var go = AssimpImporter.ImportAssimpScene(path);
                 Inspector.currentObject = go;
                 // yeni yaratılan objeyi sahne kamerasının 1 mt önüne spawnlar
-                go.transform.position = Camera.main.Position + Camera.main.Front;
+                go.transform.position = Camera.SceneCamera.Position + Camera.SceneCamera.Front;
             }
-        }
-
-        public static GameObject UseMesh(in string path)
-        {
-            var go = new GameObject(Path.GetFileName(path));
-            var mesh = AssetManager.GetMeshFullPath<Mesh>(path);
-            new MeshRenderer(mesh, go, AssetManager.DefaultMaterial);
-            return go;
         }
     }
 }

@@ -45,7 +45,7 @@ namespace ZargoEngine.Helper
             catch (UnauthorizedAccessException){
                 isAdmin = false;
             }
-            catch (Exception ex){
+            catch (Exception){
                 isAdmin = false;
             }
             return isAdmin;

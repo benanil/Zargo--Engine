@@ -9,7 +9,7 @@ namespace ZargoEngine.Editor
     {
         private VSyncMode Vsync;
 
-        private float fov = Camera.main.Fov;
+        private float fov = Camera.SceneCamera.Fov;
 
         const string CameraRotateSpeed = nameof(CameraRotateSpeed);
         const string CameraMoveSpeed   = nameof(CameraMoveSpeed);
@@ -17,13 +17,14 @@ namespace ZargoEngine.Editor
         public SettingsWindow()
         {
             LoadPrefs();
-            SceneManager.currentScene.cameraRotateSpeed = 30;
             Program.MainGame.Unload += SavePrefs;
             title = "settings";
         }
 
         protected override void OnGUI()
         {
+            if (SceneManager.currentScene == null) return;
+
             GUI.HeaderIn("Performance", .85f);
             GUI.EnumField(ref Vsync,nameof(Vsync), onSellect: () => Program.MainGame.VSync = Vsync);
             
@@ -35,12 +36,14 @@ namespace ZargoEngine.Editor
 
         private void OnFovChanged()
         {
-            Camera.main.Fov = fov;
-            Camera.main.UpdateVectors();
+            if (SceneManager.currentScene == null) return;
+            Camera.SceneCamera.Fov = fov;
+            Camera.SceneCamera.UpdateVectors();
         }
 
         private void SavePrefs()
         {
+            if (SceneManager.currentScene == null) return;
             PlayerPrefs.SetInt(nameof(Vsync), (int)Vsync);
             PlayerPrefs.SetFloat(nameof(fov), fov);
             PlayerPrefs.SetFloat(CameraRotateSpeed, SceneManager.currentScene.cameraRotateSpeed);
@@ -49,12 +52,14 @@ namespace ZargoEngine.Editor
 
         private void LoadPrefs()
         {
+            if (SceneManager.currentScene == null) return;
+
             if (PlayerPrefs.TryGetFloat(CameraRotateSpeed, out float rotateSpeed))
             {
                 Vsync = (VSyncMode)PlayerPrefs.GetInt(nameof(Vsync));
                 SceneManager.currentScene.cameraRotateSpeed = rotateSpeed;
                 SceneManager.currentScene.cameraMoveSpeed   = PlayerPrefs.GetFloat(CameraMoveSpeed );
-                Camera.main.Fov = PlayerPrefs.GetFloat(nameof(fov));
+                Camera.SceneCamera.Fov = PlayerPrefs.GetFloat(nameof(fov));
             }
         }
     }

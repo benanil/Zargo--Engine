@@ -79,15 +79,15 @@ namespace ZargoEngine.Physics
 #if Editor
             OTKvector4 rayStartNdc = new OTKvector4
             (
-                (Input.MousePosition().X / Screen.GetMainWindowSizeTupple().Item1 - 0.5f) / GameViewWindow.MousePosScaler.X * 2,
-                (Input.MousePosition().Y / Screen.GetMainWindowSizeTupple().Item2 - 0.5f) / GameViewWindow.MousePosScaler.Y * 2,
+                (Input.MousePosition().X / Screen.GetMainWindowSizeTupple().Item1 - 0.5f) / SceneViewWindow.MousePosScaler.X * 2,
+                (Input.MousePosition().Y / Screen.GetMainWindowSizeTupple().Item2 - 0.5f) / SceneViewWindow.MousePosScaler.Y * 2,
                 -1, 1
             );
 
             OTKvector4 rayEndNdc = new OTKvector4
             (
-                (Input.MousePosition().X / Screen.GetMainWindowSizeTupple().Item1 - 0.5f) / GameViewWindow.MousePosScaler.X * 2,
-                (Input.MousePosition().Y / Screen.GetMainWindowSizeTupple().Item2 - 0.5f) / GameViewWindow.MousePosScaler.Y * 2,
+                (Input.MousePosition().X / Screen.GetMainWindowSizeTupple().Item1 - 0.5f) / SceneViewWindow.MousePosScaler.X * 2,
+                (Input.MousePosition().Y / Screen.GetMainWindowSizeTupple().Item2 - 0.5f) / SceneViewWindow.MousePosScaler.Y * 2,
                 0, 1
             );
 #else
@@ -105,7 +105,7 @@ namespace ZargoEngine.Physics
                 0, 1
             );
 #endif
-            OTKmatrix.Invert(Camera.main.GetGetProjectionMatrix(), out OTKmatrix invertedProjection);
+            OTKmatrix.Invert(Camera.main.GetProjectionMatrix(), out OTKmatrix invertedProjection);
             OTKmatrix.Invert(Camera.main.GetViewMatrix()         , out OTKmatrix invertedView);
 
             OTKvector4 rayStartCamera = invertedProjection * rayStartNdc;    rayStartCamera /= rayStartCamera.W;
@@ -126,12 +126,6 @@ namespace ZargoEngine.Physics
             dynamicsWorld.RayTestRef(ref rayOrigin, ref rayDirection, rayResultCallback);
 
             return rayResultCallback.HasHit;
-        }
-
-        public static bool RayCastCameraMiddle(out RayResult rayResultCallback, float maxDistance = 10000)
-        {
-            OTKvector3 direction = (Camera.main.Front * maxDistance);
-            return RayCast(ref Camera.main.Position, ref direction, out rayResultCallback);
         }
 
         /// <summary>
