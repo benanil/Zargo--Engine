@@ -21,9 +21,9 @@ namespace ZargoEngine.Scripting
                                                     .Select(a => a.Location).ToList();
 
 
-            var seksi = Directory.GetCurrentDirectory() + "\\" +"ImGui.NET.dll";
+            var dll = Directory.GetCurrentDirectory() + "\\" +"ImGui.NET.dll";
             
-            assemblyNames.Add(seksi);
+            assemblyNames.Add(dll);
             assemblyNames.ForEach(x => Debug.Log(x));
 
             CompilerParameters parameters = new CompilerParameters()
