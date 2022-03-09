@@ -1,4 +1,4 @@
-﻿
+
 using ImGuiNET;
 using ZargoEngine.Rendering;
 
@@ -6,6 +6,8 @@ namespace ZargoEngine.Editor
 {
     public sealed class Hierarchy : EditorWindow
     {
+        static int PushID;
+
         public Hierarchy()
         {
             title = "Hierarchy";
@@ -20,6 +22,8 @@ namespace ZargoEngine.Editor
                     DrawEntityRec(x);
                 }
             });
+
+            PushID = 0;
 
             if (ImGui.BeginPopupContextWindow())
             {
@@ -39,6 +43,13 @@ namespace ZargoEngine.Editor
                     new MeshRenderer(MeshCreator.CreateSphere(), go, AssetManager.DefaultMaterial);
                     go.transform.SetPosition(Camera.SceneCamera.Position + (Camera.SceneCamera.Front * 2), true);
                 }
+                if (CurrentObj != null)
+                {
+                    if (ImGui.MenuItem("Delete"))
+                    {
+                        deletedObject = CurrentObj;
+                    }
+                }
                 ImGui.EndPopup();
             }
 
@@ -52,39 +63,30 @@ namespace ZargoEngine.Editor
         }
 
         GameObject deletedObject;
+        GameObject CurrentObj;
 
         private void DrawEntityRec(GameObject entity)
         {
             var flags = (Inspector.currentObject != entity) ? ImGuiTreeNodeFlags.OpenOnArrow : 0 | ImGuiTreeNodeFlags.Selected;
 
-            if (entity.name != null && ImGui.TreeNodeEx(entity.name ?? string.Empty, flags))
+            ImGui.PushID(PushID++);
+
+            if (ImGui.TreeNodeEx(entity.name ?? string.Empty, flags))
             {
                 // todo add drag and drop
-                ImGui.TreeNodeEx(entity.name ?? string.Empty);
-
                 for (int i = 0; i < entity.transform.ChildCount; i++)
                 {
                     DrawEntityRec(entity.transform.GetChild(i).gameObject);
                 }
-                
                 ImGui.TreePop();
             }
 
             if (ImGui.IsItemClicked()) {
                 Inspector.currentObject = entity;
+                CurrentObj = entity;
             }
 
-            if (Inspector.currentObject == entity)
-            {
-                if (ImGui.BeginPopupContextWindow())
-                {
-                    if (ImGui.MenuItem("Delete")){
-                        deletedObject = entity;
-                    }
-                    ImGui.EndPopup();
-                }
-            }
-
+            ImGui.PopID();
         }
     }
 }
