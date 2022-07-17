@@ -1,6 +1,7 @@
 # ZargoEngine2
 second development part
 this game engine writen in C# OpenTK
+![alt text](https://cdn.discordapp.com/attachments/639449278913445888/998327319372501023/Sponza.png)
 ## Task List
 - [x] 3D mesh rendering
 - [x] pbr shaders point/spot lights
